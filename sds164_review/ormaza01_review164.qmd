@@ -184,20 +184,11 @@ vaccine_data |>
 ```
 
 ```{r}
-vaccine_data <- vaccine_data |>
-  mutate(code_group = ifelse(rural_urban_code > 6, "Rural",
-                             ifelse(rural_urban_code > 3, "Moderate", "Urban")
-                             )
-         )
-
 vaccine_data |>
-  group_by(code_group) |>
-  summarize(mean_vac = mean(perc_complete_vac)) |>
-  mutate(code_group = fct_relevel(code_group, "Urban", "Moderate", "Rural")) |>
-  ggplot(aes(x = code_group, y = mean_vac, fill = code_group)) +
-  geom_col(show.legend = FALSE) +
-  coord_flip() +
-  labs(x = "Rural / Urban Group", y = "Mean Vaccination %", title = "Mean Vaccination % by Ruural / Urban Group") +
+  ggplot(aes(x = rural_urban_code, y = perc_complete_vac)) +
+  geom_jitter() +
+  geom_smooth(method = "lm") + 
+  labs(x = "Rural / Urban Group", y = "Mean Vaccination %", title = "Vaccination % by Ruural / Urban Group") +
   theme_classic()
 ```
 
@@ -243,11 +234,12 @@ a) Create a tibble with the following information for each state.  Order states 
 midwest_tbl <- midwest_vacc |> 
   group_by(state) |>
   summarize(
-    num_codes = length(unique(rural_urban_code)),
+    num_codes = n_distinct(rural_urban_code),
     state_pop = sum(tot_pop),
     prop_metro = mean(metro_status == "Metro"),
-    med_unemployment = median(unemployment_rate_2020)
-  )
+    med_unemployment = median(unemployment_rate_2020),
+  ) |>
+  arrange(state_pop)
 
 midwest_tbl
 ```
