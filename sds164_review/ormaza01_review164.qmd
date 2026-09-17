@@ -27,7 +27,7 @@ If you navigate to [my Github account](https://github.com/proback), and find the
 #| eval: false
 
 # Approach 1
-vaccine_data <- read_csv("/Users/mateoormaza/Desktop/MO - DOCUMENTS/St. Olaf/Classes/sds264/data/vaccinations_2021.csv")  #<1>
+# vaccine_data <- read_csv("/Users/mateoormaza/Desktop/MO - DOCUMENTS/St. Olaf/Classes/sds264/data/vaccinations_2021.csv")  #<1>
 
 # Approach 2
 # vaccine_data <- read_csv("~/264_fall_2026/Data/vaccinations_2021.csv")  #<2>
@@ -64,23 +64,12 @@ A recent Stat 272 project examined determinants of covid vaccination rates at th
 - `median_HHincome_2019` = county's median household income in 2019
 
 
-```{r}
-temp1 <- vaccine_data |>
-  mutate(trump_groups = cut_number(votes_Trump, 3)) |>
-  group_by(trump_groups) |>
-  summarise(n = n())
-
-temp1
-```
-
 
 1. Consider only Minnesota and its surrounding states (Iowa, Wisconsin, North Dakota, and South Dakota).  We want to examine the relationship between the percentage who voted for Biden and the percentage of complete vaccinations by state.  Generate two plots to examine this relationship:
 
 a) A scatterplot with points and smoothers colored by state.  Make sure the legend is ordered in a meaningful way, and include good labels on your axes and your legend.  Also leave off the error bars from your smoothers.
 
 ```{r}
-library(tidyverse)
-
 vaccine_data |>
   filter(state %in% c("Minnesota", "Wisconsin", "Iowa", "North Dakota", "South Dakota")) |>
   ggplot(mapping = aes(x=perc_Biden, y=perc_complete_vac, color = fct_reorder2(state, perc_Biden, perc_complete_vac))) +
@@ -90,12 +79,6 @@ vaccine_data |>
 ```
 
 b) One plot per state containing a scatterplot and a smoother.
-
-Describe which plot you prefer and why.  What can you learn from your preferred plot?
-
-I prefer the second one. The first one is very messy with a lot of overlap among the states.
-
-From this faceted plot, we can learn that there appears to be a moderately strong, positive relationship between percent voted for Biden and vaccination percentage fore the selected Midwestern states. Iowa, Minnesota, and Wisconsin seem to have the strongest linear association between percent voted for Biden and vaccination percentage among the group.
 
 ```{r}
 vaccine_data |>
@@ -107,6 +90,11 @@ vaccine_data |>
   labs(x="Percent voted for Biden", y="Percent vaccinated", color="State")
 ```
 
+Describe which plot you prefer and why.  What can you learn from your preferred plot?
+
+I prefer the second one. The first one is very messy with a lot of overlap among the states.
+
+From this faceted plot, we can learn that there appears to be a moderately strong, positive relationship between percent voted for Biden and vaccination percentage for the selected Midwestern states. Iowa, Minnesota, and Wisconsin seem to have the strongest linear association between percent voted for Biden and vaccination percentage among the group.
 
 2. We wish to compare the proportions of counties in each region with median household income above the national median ($69,560).
 
@@ -170,6 +158,10 @@ vaccine_data |>
   theme_classic()
 ```
 
+The plot above is my favorite of the three. I think that this plot does the best job of retaining information for the purpose of early EDA. The otherplots help with more specific details, but the distribution by code (via boxplots) is a nice way of displaying lots of data in an organized fashion.
+
+The graph above shows a boxplot. The distribution of vaccination percentages is on the y axis and the rural-urban code on the x axis. Vaccination percentage ranges from 0 to 100%, There are 9 rural-urban codes ranging from 1 being most urban to 9 being most rural. Therefore, we have 9 boxplots. There appears to be a slight negative relationship between rural-urban code and vaccination percentage. In other words, more rural counties tend to have lower 1st quartile, median, and 3rd quartile vaccination percentages. Interquartile range seems to be reasonable stable across codes. Urban codes appear to have more low outliers, while rural codes seem to have a large number of both low and high outliers.
+
 ```{r}
 vaccine_data <- vaccine_data |>
   mutate(high_vacc = ifelse(perc_complete_vac > 50, "High Vaccination", "Low Vaccination")) |>
@@ -196,8 +188,6 @@ vaccine_data |>
 5. BEFORE running the code below, sketch the plot that will be produced by R.  AFTER running the code, describe what conclusion(s) can we draw from this plot?  
 
 ```{r}
-#| eval: FALSE
-
 vaccine_data |>
   filter(!is.na(perc_Biden)) |>
   mutate(big_states = fct_lump(state, n = 10)) |>
@@ -212,7 +202,7 @@ The code 'lumps' the states by collecting the 10 most frequent states in the dat
 
 An initial caveat is that the "Other" group is a collection of all of the states with the least number of counties (with non-NA Biden %) in the dataset. This was done because the lump function collected the 10 states with the most counties and collects the rest into this group.
 
-This plot shows the political variation (based upon the interquartile range of % of Biden votes). Among the most frequent states. Virginia (~25 points), Georgia (~20 points), and North Carolina (~18 points) have the largest interquartile range of % of Biden votes, showing large political variation. On the other hand, Tennessee (~7.5 points), Missouri (~8 points), and Kentucky (~10 points) showed the lowest variation. It follows (logically) that the Other group has a high IQR of ~22.5 points as it does not represent a singular regional group of counties. 
+This plot shows the political variation based upon the interquartile range of % of Biden votes. Among the most frequent states. Virginia (~25 points), Georgia (~20 points), and North Carolina (~18 points) have the largest interquartile range of % of Biden votes, showing large political variation. On the other hand, Tennessee (~7.5 points), Missouri (~8 points), and Kentucky (~10 points) showed the lowest variation. It follows (logically) that the Other group has a high IQR of ~22.5 points as it does not represent a singular regional group of counties and we would expect variation.
 
 IQR measures the distance from the 25th and 75th percentiles, therefore, it ignores extreme values. We can conclude from this plot how 'different' the counties in the given states are from each other. However, an IQR does not give information on differences (which may be extreme) among the counties that live outside of the 25-75th percentiles.
 
@@ -315,7 +305,7 @@ That depends on the perc_white column and the presence of NA values. In the case
 
 d) What would happen if we removed `group_by(MD_group)`?
 
-When we do not group by anything, out summarize function will summarize the entire dataset. Therefore we will only have 1 row and 3 columns (the MD_group column will not exist). We no longer have a comparison among groups and instead have a summary of the entire dataset.
+When we do not group by anything, our summarize function will summarize the entire dataset. Therefore we will only have 1 row and 3 columns (the MD_group column will not exist). We no longer have a comparison among groups and instead have a summary of the entire dataset.
 
 
 9. Hypothetical R chunk #2:
@@ -391,6 +381,12 @@ Columns:
 
 b) Carefully describe the plot created above.
 
+Due to the structure as mentioned above, we should have 45 (again, maximum) datapoints (5 for each of the 9 codes). The graph then sets the x-axis as rural-urban code, meaning each of the 9 x-values will have 5 points associated with it. The y-axis is mean number of residents per MD. One line is drawn for each of the 5 state groups. The lines are colored by state group and are reordered (by the fct_reorder2) - mean number of residents when rural-urban code when rural-urban code is largest, in descending order.
+
 c) What would happen if we removed `filter(!is.na(people_per_MD))`?
 
+Every state group with at least 1 NA county for people per MD would then have NA for their mean people per MD>
+
 d) What would happen if we replaced `fct_reorder2(state_lump, rural_urban_code, mean_people_per_MD)` with `state_lump`?
+
+The plot would look the same, however the legend would not be ordered by mean number of residents when rural-urban code when rural-urban code is largest. So, the plot would lose some of its ease of readability and the line ordering would not necessarily match the legend ordering.
