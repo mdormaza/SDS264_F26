@@ -99,9 +99,29 @@ str_detect(spot_smaller$subgenre, "pop") # input: vector and string, output: vec
 2.  Use str_detect to print the rows of the spot_smaller tibble
     containing songs that have "pop" in the subgenre. (i.e. make a new
     tibble with fewer rows)
+    
+```{r}
+pop_tbl <- spot_smaller |>
+  filter(str_detect(subgenre, "pop"))
+
+pop_tbl
+```
+
 
 3.  Find the mean song title length for songs with "pop" in the subgenre
     and songs without "pop" in the subgenre.
+    
+```{r}
+pop_tbl2 <- spot_smaller |>
+  group_by(ifelse(str_detect(subgenre, "pop"), "Genre with pop", "Genre without pop")) |>
+  summarise(
+    mean_title_length = mean(str_length(title))
+  ) |>
+  rename(sub_pop = `ifelse(str_detect(subgenre, "pop"), "Genre with pop", "Genre without pop")`)
+  
+pop_tbl2
+```
+
 
 Producing a table like this would be great:
 
@@ -149,15 +169,26 @@ bigspotify
 | `[^abc]` | anything EXCEPT a or b or c              |
 
 ```{r}
+bigspotify |>
+  filter(!is.na(track_name)) |>
+  mutate(has_love = str_detect(str_to_lower(track_name), "love")) |>
+  group_by((playlist_genre)) |>
+  summarize(
+    prop_love = mean(has_love)
+  )
+```
+
+
+```{r}
 # Guess the output!
 
-str_view(spot_smaller$artist, "^K")
+str_view(spot_smaller$artist, "^K") # artists that start with K
 
-str_view(spot_smaller$album_release_date, "01$")
+str_view(spot_smaller$album_release_date, "01$") # albums released on 1st of month
 
-str_view(spot_smaller$title, "^.. ")
+str_view(spot_smaller$title, "^.. ") # Titles with two letter words to start
 
-str_view(spot_smaller$artist, "[^A-Za-z ]")
+str_view(spot_smaller$artist, "[^A-Za-z ]") # Does not have only regular alphabet
 ```
 
 5.  Given the corpus of common words in stringr::words, create regular
