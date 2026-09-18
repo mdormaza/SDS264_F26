@@ -1,7 +1,6 @@
 ---
 title: 'Review of Data Science 1'
-format:
-  html: default
+format: pdf
 editor_options: 
   chunk_output_type: console
 ---
