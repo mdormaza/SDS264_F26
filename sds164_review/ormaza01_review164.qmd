@@ -97,7 +97,7 @@ From this faceted plot, we can learn that there appears to be a moderately stron
 
 2. We wish to compare the proportions of counties in each region with median household income above the national median ($69,560).
 
-Skipped - not on hw.
+Skipped - not on hw. more changes.
 
 a) Fill in the blanks below to produce a segmented bar plot with regions ordered from highest proportion above the median to lowest.
 
