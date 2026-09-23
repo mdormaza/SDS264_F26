@@ -175,7 +175,8 @@ bigspotify |>
   group_by((playlist_genre)) |>
   summarize(
     prop_love = mean(has_love)
-  )
+  ) |>
+  arrange(desc(prop_love))
 ```
 
 
@@ -186,7 +187,7 @@ str_view(spot_smaller$artist, "^K") # artists that start with K
 
 str_view(spot_smaller$album_release_date, "01$") # albums released on 1st of month
 
-str_view(spot_smaller$title, "^.. ") # Titles with two letter words to start
+str_view(spot_smaller$title, "^.. ") # Titles with two letter words (or numbers) to start
 
 str_view(spot_smaller$artist, "[^A-Za-z ]") # Does not have only regular alphabet
 ```
@@ -201,6 +202,17 @@ str_view(spot_smaller$artist, "[^A-Za-z ]") # Does not have only regular alphabe
 -   Start with a vowel.
 -   End with ed, but not with eed.
 -   Words where q is not followed by u. (are there any in `words`?)
+
+```{r}
+str_subset(words, "^y")
+str_subset(words, "y$")
+str_subset(words, "^...$")
+str_subset(words, ".......")
+str_subset(words, "^[aeiou]")
+str_subset(words, "[^e]ed$")
+str_subset(words, "q[^u]")
+```
+
 
 ```{r}
 # Try using str_view() or str_subset()
@@ -240,9 +252,23 @@ str_view(spot_smaller$title, "\\$")
 6.  In bigspotify, how many track_names include a `$`? Be sure you print
     the track_names you find and make sure the dollar sign is not just
     in a featured artist!
+    
+```{r}
+bigspotify |>
+  mutate(only_name = str_remove(track_name, "\\(?(feat|with).*")) |>
+  filter(str_detect(only_name, "\\$")) |>
+  select(track_name) |>
+  print(n = Inf)
+```
 
 7.  In bigspotify, how many track_names include a dollar amount (a `$`
     followed by a number).
+    
+```{r}
+dollar = str_subset(bigspotify$track_name, "\\$\\d")
+length(dollar)
+```
+
 
 ## Repetition
 
@@ -267,17 +293,32 @@ str_view(spot_smaller$album_release_date, "\\d{4}-\\d{2}")
 8.  Modify the first regular expression above to also pick up "A.A" (in
     addition to "BEYONC" and "II"). That is, pick up strings where there
     might be a period between capital letters.
+```{r}
+str_view(spot_smaller$album_name, "([A-Z]\\.?){2,}")
+```
+
 
 9.  Create some strings that satisfy these regular expressions and
     explain.
 
 -   `"^.*$"`
--   `"\{.+\}"`
+
+literally anything - "yes", "words", "3746"
+
+-   `"\\{.+\\}"`
+
+anything with structure { + anything + } - {word}, {yes}, {240yes}
 
 10. Create regular expressions to find all `stringr::words` that:
 
 -   Start with three consonants.
 -   Have two or more vowel-consonant pairs in a row.
+
+```{r}
+str_subset(words, "^[^aeiou]{3}")
+str_subset(words, "([aeiou][^aeiou]){2,}")
+```
+
 
 ## Useful functions for handling patterns
 
@@ -298,6 +339,12 @@ spot_smaller |>
 
 11. In the spot_smaller dataset, how many words are in each title?
     (hint: `\\b`)
+
+```{r}
+spot_smaller |>
+  mutate(num_title_words = str_count(str_remove(title, " \\(feat.*| \\(with.*"), " ") + 1)
+```
+
 
 12. In the spot_smaller dataset, extract the first word from every
     title. Show how you would print out these words as a vector and how
