@@ -342,7 +342,8 @@ spot_smaller |>
 
 ```{r}
 spot_smaller |>
-  mutate(num_title_words = str_count(str_remove(title, " \\(feat.*| \\(with.*"), " ") + 1)
+  mutate(num_words = str_count(title, "\\b[^ ]+\\b")) |>
+  select(title, num_words)
 ```
 
 
@@ -350,6 +351,15 @@ spot_smaller |>
     title. Show how you would print out these words as a vector and how
     you would create a new column on the spot_smaller tibble. That is,
     produce this:
+    
+```{r}
+str_extract(spot_smaller$title, "^[^ ]+")
+
+spot_smaller |>
+  mutate(first_word = str_extract(title, "^[^ ]+")) |>
+  select(title, first_word)
+```
+
 
 ```{r}
 # [1] "Hear"      "Run"       "Formation" "7/11"      "My"        "It's"     
@@ -384,6 +394,20 @@ Then this:
 -   what if you include both "80's" and "80s"?
 -   how can you count "80's" and "80s" together in your final tibble?
 
+```{r}
+bigspotify |>
+  distinct(playlist_name) |>
+  filter(str_detect(playlist_name, "\\d0('?)s")) |>
+  select(playlist_name) |>
+  mutate(decade = str_extract(playlist_name, "\\d0('?)s")) |>
+  mutate(decade = str_replace(decade, "'", "")) |>
+  group_by(decade) |>
+  summarise(
+    n = n()
+  )
+```
+
+
 ## Grouping and backreferences
 
 ```{r}
@@ -414,17 +438,39 @@ str_view(x1, "(.)(.)(.)\\1\\2\\3")
     provide a word or expression as an example:
 
 -   `"(.)\\1\\1"`
+    
+    any character three times in a row (none in words)
+    
 -   `"(.)(.)(.).*\\3\\2\\1"`
+    
+    some three letters appear in reverse order later on (paragraph in words)
 
 Which words in `stringr::words` match each expression?
+
+```{r}
+str_subset(words, "(.)\\1\\1")
+str_subset(words, "(.)(.)(.).*\\3\\2\\1")
+```
+
 
 15. Construct a regular expression to match words in `stringr::words`
     that contain a repeated pair of letters (e.g. “church” contains “ch”
     repeated twice) but *not* match repeated pairs of numbers (e.g.
     507-786-3861).
+    
+```{r}
+str_subset(words, "([a-zA-Z][a-zA-Z]).*\\1")
+```
+
 
 16. Reformat the album_release_date variable in spot_smaller so that it
     is MM-DD-YYYY instead of YYYY-MM-DD. (Hint: str_replace().)
+    
+```{r}
+spot_smaller |>
+  mutate(album_release_date = str_replace(album_release_date, "(..)-(..)-(....)", "\\3-\\1-\\2"))
+```
+
 
 17. BEFORE RUNNING IT, explain to your partner(s) what the following R
     chunk will do:
@@ -434,3 +480,6 @@ sentences |>
   str_replace("([^ ]+) ([^ ]+) ([^ ]+)", "\\1 \\3 \\2") |> 
   head(5)
 ```
+
+
+This reorders the first three words in each sentence. The first word stays first, the second word becomes the third, and the third becomes the second. In other words, we just swap the second and third words for each sentence.

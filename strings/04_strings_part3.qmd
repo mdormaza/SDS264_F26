@@ -22,8 +22,19 @@ library(httr)
 
 18. Produce an R string which the regular expression represented by `"\\..\\..\\.."` matches.  In other words, find a string `y` below that produces a TRUE in `str_detect`.
 
+```{r}
+true_string <- ".a.a.a"
+str_detect(true_string, "\\..\\..\\..")
+```
 
 19. What words in `stringr::words` have the highest number of vowels? What words have the highest proportion of vowels? (Hint: what is the denominator?)  Figure this out using the tidyverse and piping, starting with `as_tibble(words) |>`.
+
+```{r}
+words_tbl <- as_tibble(words)
+
+words_tbl |>
+```
+
 
 
 20. *Carefully* explain what the code below does, both line by line and in general terms.
