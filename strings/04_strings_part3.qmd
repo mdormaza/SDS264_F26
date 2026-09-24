@@ -32,9 +32,17 @@ str_detect(true_string, "\\..\\..\\..")
 ```{r}
 words_tbl <- as_tibble(words)
 
-words_tbl |>
-```
+words_tbl
 
+words_tbl |>
+  mutate(
+    num_letters = str_count(value, "."),
+    num_vowels = str_count(value, "[aeiou]"),
+    prop_vowels = num_vowels / num_letters
+  ) |>
+  arrange(desc(prop_vowels)) |>
+print(n = 10)
+```
 
 
 20. *Carefully* explain what the code below does, both line by line and in general terms.
@@ -46,8 +54,12 @@ as_tibble(words) |>
   print(n = Inf)
 ```
 
+Line 1: Create vector temp from words - swap the first and last letters of each word
+Line 2: Turn words vector into a tibble and pipe
+Line 3: Semi-join temp as tibble - will incude only rows from words that are also in temp
+Line 4: Print all rows
 
-
+We create a 1-column tibble of words that have the identical last and first letters.
 ## Coco and Metacritic
 
 We will check out the Metacritic page for the 2017 movie Coco, scrape information from that page (we'll get into web scraping in a few weeks!), clean it up into a usable format, and answer some questions using strings and regular expressions.
@@ -80,8 +92,45 @@ user_reviews <- html_text(user_reviews)
 
 a) Print out the user reviews where the reviewer mentions "emotion" or "cry".  Think about various forms ("cried", "emotional", etc.)  You may want to turn reviews to all lower case before searching for matches.
 
+```{r}
+user_reviews |>
+  str_to_lower() |>
+  str_subset("\\bemotion|cry(ing)?|crie[sd]")
+```
+
 b) In critic reviews, replace all instances where "Pixar" is used with its full name: "Pixar Animation Studios".
+
+```{r}
+top_reviews |>
+  str_replace_all("Pixar|pixar", "Pixar Animation Studios")
+```
 
 c) Find out how many times each user uses "I" in their review.  Remember that it could be used as upper or lower case, at the beginning, middle, or end of a sentence, etc.
 
+```{r}
+i_tbl = as_tibble(user_reviews) |>
+  mutate(num_i = str_count(str_to_lower(value), "\\bi\\b"))
+
+i_tbl
+```
+
+
 d) Do critics or users have more complex reviews, as measured by average number of commas used?  Be sure your code weeds out commas used in numbers, such as "12,345".
+
+```{r}
+users_cnt <- as_tibble(user_reviews) |>
+  mutate(num_coms = str_count(value, "(?<!\\d),|,(?!\\d)"))
+
+users_cnt
+
+critics_cnt <- as_tibble(top_reviews) |>
+  mutate(num_coms = str_count(value, "(?<!\\d),|,(?!\\d)"))
+
+critics_cnt
+
+mean(users_cnt$num_coms)
+mean(critics_cnt$num_coms)
+
+```
+
+On average, users have a higher average number of commas used. This is an interesting finding and suggests that users have more complex reviews (by this metric).
