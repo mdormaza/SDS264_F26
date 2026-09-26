@@ -1,9 +1,12 @@
 ---
 title: "Strings: Extra Practice (Part 3)"
 format:
-  html: default
+  pdf: default
 editor_options: 
   chunk_output_type: console
+editor: 
+  markdown: 
+    wrap: 72
 ---
   
 You can download this .qmd file from [here](https://github.com/proback/264_fall_2026/blob/main/04_strings_part3.qmd).  Just hit the Download Raw File button.
@@ -36,6 +39,13 @@ words_tbl
 
 words_tbl |>
   mutate(
+    num_vowels = str_count(value, "[aeiou]"),
+  ) |>
+  arrange(desc(num_vowels)) |>
+print(n = 10)
+
+words_tbl |>
+  mutate(
     num_letters = str_count(value, "."),
     num_vowels = str_count(value, "[aeiou]"),
     prop_vowels = num_vowels / num_letters
@@ -56,7 +66,7 @@ as_tibble(words) |>
 
 Line 1: Create vector temp from words - swap the first and last letters of each word
 Line 2: Turn words vector into a tibble and pipe
-Line 3: Semi-join temp as tibble - will incude only rows from words that are also in temp
+Line 3: Semi-join temp as tibble - will include only rows from words that are also in temp
 Line 4: Print all rows
 
 We create a 1-column tibble of words that have the identical last and first letters.
@@ -65,7 +75,6 @@ We create a 1-column tibble of words that have the identical last and first lett
 We will check out the Metacritic page for the 2017 movie Coco, scrape information from that page (we'll get into web scraping in a few weeks!), clean it up into a usable format, and answer some questions using strings and regular expressions.
 
 ```{r}
-#| eval: false
 
 library(polite)
 coco <- "https://www.metacritic.com/movie/coco-2017/" |>
