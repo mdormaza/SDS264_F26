@@ -9,16 +9,16 @@ editor:
     wrap: 72
 ---
 
-# Libraries
-
 ```{r}
+#| echo: false
+
+# load libraries
+
 library(tidyverse)
 library(jsonlite)
-```
 
-# Data
+# read data into correct format
 
-```{r}
 apple_raw <- read_csv("mini_proj1/apple_earnings.csv")
 
 apple <- apple_raw |>
@@ -28,31 +28,27 @@ apple <- apple_raw |>
 
 apple
 ```
-```{r}
-glimpse(apple)
-```
-
-
 
 # Introduction
 
 An earnings call is a quarterly conference call held by companies to share their financial performance with investors and the public. Earnings calls are often used by investors to fundamentally analyze the financial health of a company and forecast future performance. These calls typically include an introduction, disclaimers, reports from the CEO and CFO, as well as open Q&A from external analysts. 
 
-Our dataset, taken from fruitstanddev on Kaggle, provides transcripts of Apple earnings calls from 2005-2025. Each earnings call is split into paragraphs, each labeled by speaker. Through out sentiment analysis, we seek to examine how tone shifts around company-level and macroeconomic events as well as the relationship between sentiment and stock performance.
-
-
-# Data Cleaning
-
-## Eliminate Empty Content Lines
+Our dataset, taken from fruitstanddev on Kaggle, provides transcripts of Apple earnings calls from 2005-2025. Each earnings call is split into paragraphs, each labeled by speaker. Through our sentiment analysis, we seek to examine how tone shifts around company-level and macroeconomic events as well as the relationship between sentiment and stock performance.
 
 ```{r}
+#| echo: false
+
+# use str_detect to eliminate empty content lines
+
 apple2 <- apple |>
   filter(str_detect(content, "[a-zA-Z]"))
 ```
 
-## Standardize Speaker Names
-
 ```{r}
+#| echo: false
+
+# check speaker naming conventions
+
 apple2 |>
   group_by(speaker) |>
   summarize(
@@ -62,6 +58,10 @@ apple2 |>
 ```
 
 ```{r}
+#| echo: false
+
+# use str_remove and str_detect to standardize speaker names
+
 apple3 <- apple2 |>
   mutate(
     speaker = str_remove(
@@ -81,11 +81,41 @@ apple3 <- apple2 |>
       speaker,
       "\\s[A-Z][a-z]+(?=\\s)"
     ),
-    
-  )
+    speaker = case_when(
+        str_detect(speaker, "Cook")        ~ "Tim Cook",
+        str_detect(speaker, "Jobs")        ~ "Steve Jobs",
+        str_detect(speaker, "Sacconaghi")  ~ "Toni Sacconaghi",
+        str_detect(speaker, "Reitzes")     ~ "Ben Reitzes",
+        str_detect(speaker, "Bollin")      ~ "Ben Bollin",
+        str_detect(speaker, "Shope")       ~ "Bill Shope",
+        str_detect(speaker, "Marshall")    ~ "Brian Marshall",
+        str_detect(speaker, "Munster")     ~ "Gene Munster",
+        str_detect(speaker, "Caso")        ~ "Chris Caso",
+        str_detect(speaker, "Whit.*more")  ~ "Chris Whitmore",
+        str_detect(speaker, "Suva")        ~ "Jim Suva",
+        str_detect(speaker, "Huberty")     ~ "Katy Huberty",
+        str_detect(speaker, "^Keith B")    ~ "Keith Bachman",
+        str_detect(speaker, "Sankar")      ~ "Krish Sankar",
+        str_detect(speaker, "Abramsky")    ~ "Mike Abramsky",
+        str_detect(speaker, "\\sNg$")      ~ "Mike Ng",
+        str_detect(speaker, "Olson")       ~ "Mike Olson",
+        str_detect(speaker, "Gardi?ner")   ~ "Richard Gardner",
+        str_detect(speaker, "Semple")      ~ "Rob Semple",
+        str_detect(speaker, "\\sHo$")      ~ "Sidney Ho",
+        str_detect(speaker, "Milunovich")  ~ "Steve Milunovich",
+        str_detect(speaker, "^Gary W")     ~ "Gary Wipfler",
+        TRUE ~ speaker
+      )
+    )
 ```
 
+### Check standardized names
+
 ```{r}
+#| echo: false
+
+# check speaker naming standardization
+
 apple3 |>
   group_by(speaker) |>
   summarize(
@@ -94,38 +124,48 @@ apple3 |>
   print(n = Inf)
 ```
 
+```{r}
+#| echo: false
 
+# filter mislabeled or empty rows
+
+apple4 <- apple3 |>
+  filter(!(speaker %in% c("Executives", "Analysts", "NA", "Unknown", "Apple Computer", "Piper Jaffray", "Apple's 2005 Call"))) |>
+  filter(!(is.na(speaker))) |>
+  filter(!(REPORT_DATE %in% as.Date(c("2005-10-13", "2007-04-25")))) |>
+  mutate(speaker = if_else(speaker == "", "Unknown Analyst", speaker))
+```
 
 ```{r}
-apple3 <- apple2 |>
-  mutate(standardized_speaker = case_when(
-    is.na(speaker) ~ "None",
-    str_detect(speaker, "Nancy Paxton") ~ "Nancy Paxton",
-    str_detect(speaker, "Peter Oppenheimer") ~ "Peter Oppenheimer",
-    str_detect(speaker, "Tejas Gala") ~ "Tejas Gala",
-    str_detect(speaker, "Tim.*Cook") ~ "Tim Cook",
-    str_detect(speaker, "Luca.*Maestri") ~ "Luca Maestri",
-    str_detect(speaker, "Sacconaghi") ~ "Antonio Sacconaghi",
-    str_detect(speaker, "Aaron.*Rakers") ~ "Aaron Rakers",
-    str_detect(speaker, "Amit") ~ "Amit Daryanani",
-    str_detect(speaker, "Andrew Neff") ~ "Andrew Neff",
-    str_detect(speaker, "Andy Hargreaves") ~ "Andy Hargreaves",
-    str_detect(speaker, "Atif Malik") ~ "Atif Malik",
-    str_detect(speaker, "Ben.*Reitzes") ~ "Ben Reitzes",
-    str_detect(speaker, "Ben Bollin") ~ "Ben Bollin",
-    str_detect(speaker, "Shope") ~ "Bill Shope",
-    str_detect(speaker, "Bill Fearnley") ~ "Bill Fearnley",
-    TRUE ~ speaker
+#| echo: false
+
+# label rows as executive speaker, operations, or analyst
+
+executives <- c("Tim Cook", "Steve Jobs", "Peter Oppenheimer", "Luca Maestri", "Kevan Parekh")
+operations <- c("Nancy Paxton", "Tejas Gala", "Saori Casey", "Suhasini Chandramouli", "Operator")
+
+apple5 <- apple4 |>
+  mutate(role = case_when(
+    speaker %in% executives ~ "Executive",
+    speaker %in% c(operations) ~ "Operations",
+    TRUE ~ "Analyst"
   ))
 ```
 
-
 ```{r}
-apple3 |>
-  group_by(standardized_speaker) |>
-  summarize(
-    n= n()
+#| echo: false
+
+# label data as Q&A or prepared
+
+apple_final <- apple5 |>
+  group_by(REPORT_DATE) |>
+  mutate(
+    qa_start = min(paragraph_number[role == "Analyst"]),
+    section = if_else(paragraph_number >= qa_start, "Q&A", "Prepared")
   ) |>
-  print(n = Inf)
+  ungroup()
 ```
+
+
+
 
