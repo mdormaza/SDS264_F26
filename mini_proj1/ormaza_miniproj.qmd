@@ -165,7 +165,3 @@ apple_final <- apple5 |>
   ) |>
   ungroup()
 ```
-
-
-
-
