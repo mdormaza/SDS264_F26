@@ -1,0 +1,131 @@
+---
+title: "Mini-Project #1"
+format:
+  pdf: default
+editor_options: 
+  chunk_output_type: console
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+# Libraries
+
+```{r}
+library(tidyverse)
+library(jsonlite)
+```
+
+# Data
+
+```{r}
+apple_raw <- read_csv("mini_proj1/apple_earnings.csv")
+
+apple <- apple_raw |>
+  mutate(paras = map(TRANSCRIPTS, fromJSON)) |>
+  select(-TRANSCRIPTS) |>
+  unnest(paras)
+
+apple
+```
+```{r}
+glimpse(apple)
+```
+
+
+
+# Introduction
+
+An earnings call is a quarterly conference call held by companies to share their financial performance with investors and the public. Earnings calls are often used by investors to fundamentally analyze the financial health of a company and forecast future performance. These calls typically include an introduction, disclaimers, reports from the CEO and CFO, as well as open Q&A from external analysts. 
+
+Our dataset, taken from fruitstanddev on Kaggle, provides transcripts of Apple earnings calls from 2005-2025. Each earnings call is split into paragraphs, each labeled by speaker. Through out sentiment analysis, we seek to examine how tone shifts around company-level and macroeconomic events as well as the relationship between sentiment and stock performance.
+
+
+# Data Cleaning
+
+## Eliminate Empty Content Lines
+
+```{r}
+apple2 <- apple |>
+  filter(str_detect(content, "[a-zA-Z]"))
+```
+
+## Standardize Speaker Names
+
+```{r}
+apple2 |>
+  group_by(speaker) |>
+  summarize(
+    n= n()
+  ) |>
+  print(n = Inf)
+```
+
+```{r}
+apple3 <- apple2 |>
+  mutate(
+    speaker = str_remove(
+      speaker,
+      "^[QA]\\s*[-\u2013]\\s*|\\s+[-\u2013].*$|,.*$"
+    ),
+    speaker = str_remove(
+      speaker,
+      "\\s[a-zA-Z].?(?=\\s)"
+    ),
+    speaker = str_replace(
+      speaker,
+      "^([A-Z][a-z]+)([A-Z])",
+      "\\1 \\2"
+    ),
+    speaker = str_remove_all(
+      speaker,
+      "\\s[A-Z][a-z]+(?=\\s)"
+    ),
+    
+  )
+```
+
+```{r}
+apple3 |>
+  group_by(speaker) |>
+  summarize(
+    n= n()
+  ) |>
+  print(n = Inf)
+```
+
+
+
+```{r}
+apple3 <- apple2 |>
+  mutate(standardized_speaker = case_when(
+    is.na(speaker) ~ "None",
+    str_detect(speaker, "Nancy Paxton") ~ "Nancy Paxton",
+    str_detect(speaker, "Peter Oppenheimer") ~ "Peter Oppenheimer",
+    str_detect(speaker, "Tejas Gala") ~ "Tejas Gala",
+    str_detect(speaker, "Tim.*Cook") ~ "Tim Cook",
+    str_detect(speaker, "Luca.*Maestri") ~ "Luca Maestri",
+    str_detect(speaker, "Sacconaghi") ~ "Antonio Sacconaghi",
+    str_detect(speaker, "Aaron.*Rakers") ~ "Aaron Rakers",
+    str_detect(speaker, "Amit") ~ "Amit Daryanani",
+    str_detect(speaker, "Andrew Neff") ~ "Andrew Neff",
+    str_detect(speaker, "Andy Hargreaves") ~ "Andy Hargreaves",
+    str_detect(speaker, "Atif Malik") ~ "Atif Malik",
+    str_detect(speaker, "Ben.*Reitzes") ~ "Ben Reitzes",
+    str_detect(speaker, "Ben Bollin") ~ "Ben Bollin",
+    str_detect(speaker, "Shope") ~ "Bill Shope",
+    str_detect(speaker, "Bill Fearnley") ~ "Bill Fearnley",
+    TRUE ~ speaker
+  ))
+```
+
+
+```{r}
+apple3 |>
+  group_by(standardized_speaker) |>
+  summarize(
+    n= n()
+  ) |>
+  print(n = Inf)
+```
+
