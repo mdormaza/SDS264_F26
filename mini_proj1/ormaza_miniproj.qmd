@@ -16,6 +16,7 @@ editor:
 
 library(tidyverse)
 library(jsonlite)
+library(tidytext)
 
 # read data into correct format
 
@@ -165,3 +166,62 @@ apple_final <- apple5 |>
   ) |>
   ungroup()
 ```
+
+# Sentiment Over Time
+
+```{r}
+apple_final$
+```
+
+
+
+```{r}
+loughran <- get_sentiments("loughran")
+
+apple_exec_words <- apple_final |>
+  filter(role == "Executive") |>
+  unnest_tokens(word, content, token = "words") |>
+  group_by(REPORT_DATE, section) |>
+  mutate(total_words = n()) |>
+  ungroup()
+
+apple_exec_words |>
+  inner_join(loughran, relationship = "many-to-many") |>
+  count(REPORT_DATE, sentiment, total_words, section) |>
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) |>
+  mutate(net = ((positive - negative) / total_words) * 1000) |>
+  ggplot(aes(x = REPORT_DATE, y = net, fill = net > 0)) +
+      geom_col() + 
+      facet_wrap(~section)
+```
+
+
+```{r}
+loughran <- get_sentiments("loughran")
+
+apple_exec_words <- apple_final |>
+  filter(role == "Executive") |>
+  unnest_tokens(word, content, token = "words") |>
+  group_by(REPORT_DATE, section) |>
+  mutate(total_words = n()) |>
+  ungroup()
+
+apple_exec_words |>
+  inner_join(loughran, relationship = "many-to-many") |>
+  count(REPORT_DATE, sentiment, total_words, section) |>
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) |> 
+  mutate(net = ((positive - negative) / total_words) * 100) |>
+  ggplot(aes(x = REPORT_DATE, y = net)) +
+      geom_col(fill = "#0071E3") + 
+      facet_wrap(~section) +
+      theme_minimal() + 
+      labs(
+        title = "Net Loughran Sentiment for Apple Executives per 100 Words",
+        x = "Earnings Call Date",
+        y = "Net Sentiment per 100 Words",
+      )
+```
+
+This is a bar chart showing the net Loughran sentiment for Apple executives per 100 words. Loughran sentiment is a finance-specific sentiment lexicon, and net sentiment per 100 words is calculated by subtracting the number of negative words from the number of positive words, and then dividing by the total number of words and multiplying by 100 to standardize for the length of each earnings call. The graph is then faceted into sentiment in the prepared remarks from executives and the Q&A executive statements. Earnings call dates span from 2006 to 2025. It is also important to know that rows were dropped from 2005, 2007, and 2013, due to missing data. Net sentiment per 100 words ranges from 0 to 3.
+
+Sentiment remains net positive across all earnings calls in both the prepared and Q&A sections. For the prepared section, sentiment trends in the positive direction over time. Q&A sentiment remains generally stable, on average, despite fluctuations. Sentiment is significantly higher across time for prepared remarks in comparison to Q&A remarks.
