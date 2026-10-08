@@ -568,7 +568,7 @@ data_sci <- list(
 
 Use str to learn about data_sci. 
 ```{r}
-
+str(data_sci)
 ```
 
 Now, figure out how to get **exactly** the following outputs. Bonus points if you can do it more than one way!
@@ -576,39 +576,42 @@ Now, figure out how to get **exactly** the following outputs. Bonus points if yo
 
 [1] "first it must work" "then it can be"     "pretty" 
 ```{r}
-
+data_sci[1]
+data_sci["first"]
 ```
 
 
 $DRY
 [1] "Do not"   "Repeat"   "Yourself"
 ```{r}
-
+data_sci[2]
+data_sci["DRY"]
 ```
 
 
 [1] 3 1 4 1 5 9 3
 ```{r}
-
+data_sci[[5]][c(3,1,3,1,5,9,3)]
+data_sci[["integers"]][c(3,1,3,1,5,9,3)]
 ```
 
 
       pack1         etc 
   "ggplot2" "and more!" 
 ```{r}
-
+data_sci[[7]][c(1,4)]
 ```
 
 
 [1] "rainbows!"
 ```{r}
-
+data_sci[[8]][4]
 ```
 
 
 [1] "garbage" "in"      "garbage" "out"   
 ```{r}
-
+data_sci[[3]][c(1,2,1,3)]
 ```
 
 
@@ -626,8 +629,9 @@ $DRY
  9    25    16
 10    28    20
 # … with 224 more rows
-```{r}
 
+```{r}
+data_sci[[4]][c(9,8)]
 ```
 
 
@@ -637,6 +641,6 @@ $DRY
 [[2]]
 [1] "amazing!"      
 ```{r}
-
+data_sci[[8]][c(1,2)]
 ```
 
