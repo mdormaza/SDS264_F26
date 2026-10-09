@@ -11,77 +11,76 @@ editor:
 
 ```{r}
 #| echo: false
+#| warning: false
+#| message: false
 
 # load libraries
 
 library(tidyverse)
 library(jsonlite)
 library(tidytext)
+library(tidyquant)
+library(lubridate)
 
 # read data into correct format
 
-apple_raw <- read_csv("mini_proj1/apple_earnings.csv")
+apple_raw <- read_csv("apple_earnings.csv")
 
 apple <- apple_raw |>
   mutate(paras = map(TRANSCRIPTS, fromJSON)) |>
   select(-TRANSCRIPTS) |>
   unnest(paras)
-
-apple
 ```
 
 # Introduction
 
-An earnings call is a quarterly conference call held by companies to share their financial performance with investors and the public. Earnings calls are often used by investors to fundamentally analyze the financial health of a company and forecast future performance. These calls typically include an introduction, disclaimers, reports from the CEO and CFO, as well as open Q&A from external analysts. 
+An earnings call is a quarterly conference call held by companies to share their financial performance with investors and the public. These calls typically include an introduction, disclaimers, reports from the CEO and CFO, as well as open Q&A from external analysts. While opening remarks are prepared to intentionally highlight positive performances, the Q&A sections often force executives to deal with more complicated issues. Earnings calls are often used by investors to fundamentally analyze the financial health of a company and forecast future performance. Developments in Natural Language Processing (NLP) and sentiment analysis capabilities have facilitated creative ways for investors to build quantitative analyses of these transcripts, better informing their investment decisions.
 
-Our dataset, taken from fruitstanddev on Kaggle, provides transcripts of Apple earnings calls from 2005-2025. Each earnings call is split into paragraphs, each labeled by speaker. Through our sentiment analysis, we seek to examine how tone shifts around company-level and macroeconomic events as well as the relationship between sentiment and stock performance.
+Our dataset, taken from fruitstanddev on Kaggle, provides transcripts of Apple earnings calls from 2005-2025. Each of these calls contains opening summaries from the CEO and CFO, followed by Q&As from a variety of equity analysts at major financial firms. It is important to note that earnings calls from October 2005 and April 2007 were empty, and some calls from 2012 and 2013 were missing some paragraphs.
+
+In our sentiment analysis, we hope to deepen our understanding of the evolution of Apple's earnings calls. Firstly, we compare the net sentiment across time between prepared remarks and Q&A answers from executives to see whether management responds differently when questioned. Next, we track how executive sentiment and vocabulary have evolved over time using tf-idf statistics. We will focus this section on such evolutions with respect to both Apple-specific and macroeconomic regime changes. Finally, we seek to identify if net sentiment in Apple earnings calls are useful for predicting stock growth for the next day.
 
 ```{r}
 #| echo: false
+#| warning: false
+#| message: false
 
-# use str_detect to eliminate empty content lines
+# eliminate empty content lines
 
 apple2 <- apple |>
-  filter(str_detect(content, "[a-zA-Z]"))
+  filter(str_detect(content, "[a-zA-Z]")) # STR FUNCTION 1, REGEX 1
 ```
 
 ```{r}
 #| echo: false
-
-# check speaker naming conventions
-
-apple2 |>
-  group_by(speaker) |>
-  summarize(
-    n= n()
-  ) |>
-  print(n = Inf)
-```
-
-```{r}
-#| echo: false
-
-# use str_remove and str_detect to standardize speaker names
+#| warning: false
+#| message: false
+# standardize speaker names
 
 apple3 <- apple2 |>
   mutate(
+    # remove Q/A prefixes, firm suffixes, title suffixes
     speaker = str_remove(
       speaker,
-      "^[QA]\\s*[-\u2013]\\s*|\\s+[-\u2013].*$|,.*$"
+      "^[QA]\\s*[-\u2013]\\s*|\\s+[-\u2013].*$|,.*$" # STR FUNCTION 2, REGEX 2
     ),
+    # remove middle intials
     speaker = str_remove(
       speaker,
-      "\\s[a-zA-Z].?(?=\\s)"
+      "\\s[a-zA-Z].?(?=\\s)" # STR FUNCTION 3, REGEX 3
     ),
+    # add missing spaces
     speaker = str_replace(
       speaker,
-      "^([A-Z][a-z]+)([A-Z])",
-      "\\1 \\2"
+      "^([A-Z][a-z]+)([A-Z])", # STR FUNCTION 4, REGEX 4
+      "\\1 \\2" 
     ),
+    # remove middle names
     speaker = str_remove_all(
       speaker,
-      "\\s[A-Z][a-z]+(?=\\s)"
+      "\\s[A-Z][a-z]+(?=\\s)" # STR FUNCTION 5, REGEX 5
     ),
+    # fix other missing names without obvious regex trend - mispelling, abbrevs, nicknames, etc.
     speaker = case_when(
         str_detect(speaker, "Cook")        ~ "Tim Cook",
         str_detect(speaker, "Jobs")        ~ "Steve Jobs",
@@ -110,23 +109,10 @@ apple3 <- apple2 |>
     )
 ```
 
-### Check standardized names
-
 ```{r}
 #| echo: false
-
-# check speaker naming standardization
-
-apple3 |>
-  group_by(speaker) |>
-  summarize(
-    n= n()
-  ) |>
-  print(n = Inf)
-```
-
-```{r}
-#| echo: false
+#| warning: false
+#| message: false
 
 # filter mislabeled or empty rows
 
@@ -139,6 +125,8 @@ apple4 <- apple3 |>
 
 ```{r}
 #| echo: false
+#| warning: false
+#| message: false
 
 # label rows as executive speaker, operations, or analyst
 
@@ -155,6 +143,8 @@ apple5 <- apple4 |>
 
 ```{r}
 #| echo: false
+#| warning: false
+#| message: false
 
 # label data as Q&A or prepared
 
@@ -165,39 +155,45 @@ apple_final <- apple5 |>
     section = if_else(paragraph_number >= qa_start, "Q&A", "Prepared")
   ) |>
   ungroup()
+
+# fix report dates / standardize
+apple_final <- apple_final |>
+  mutate(REPORT_DATE = case_when(
+    REPORT_DATE == as.Date("2006-01-19") ~ as.Date("2006-01-18"),
+    REPORT_DATE == as.Date("2006-04-20") ~ as.Date("2006-04-19"),
+    REPORT_DATE == as.Date("2006-10-19") ~ as.Date("2006-10-18"),
+    REPORT_DATE == as.Date("2009-04-23") ~ as.Date("2009-04-22"),
+    TRUE ~ REPORT_DATE
+  ))
 ```
 
-# Sentiment Over Time
+# Net Sentiment Over Time
 
 ```{r}
-apple_final$
-```
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 7
+#| fig-height: 3.5
+loughran <- get_sentiments("loughran") # finance specific sentiment system
 
-
-
-```{r}
-loughran <- get_sentiments("loughran")
-
-apple_exec_words <- apple_final |>
-  filter(role == "Executive") |>
-  unnest_tokens(word, content, token = "words") |>
-  group_by(REPORT_DATE, section) |>
-  mutate(total_words = n()) |>
-  ungroup()
-
-apple_exec_words |>
-  inner_join(loughran, relationship = "many-to-many") |>
-  count(REPORT_DATE, sentiment, total_words, section) |>
-  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) |>
-  mutate(net = ((positive - negative) / total_words) * 1000) |>
-  ggplot(aes(x = REPORT_DATE, y = net, fill = net > 0)) +
-      geom_col() + 
-      facet_wrap(~section)
-```
-
-
-```{r}
-loughran <- get_sentiments("loughran")
+apple_final <- apple_final |>
+  mutate(company_era = 
+           case_when(
+             as.Date("2010-10-18") >= REPORT_DATE ~ "Jobs",
+             as.Date("2019-01-01") >= REPORT_DATE ~ "Early Cook",
+             TRUE ~ "Recent Cook"
+           ),
+         macro_era = 
+           case_when(
+             as.Date("2024-01-01") <= REPORT_DATE ~ "AI Boom",
+             as.Date("2022-01-01") <= REPORT_DATE ~ "Inflation & Rate Hikes",
+             as.Date("2020-01-01") <= REPORT_DATE ~ "COVID-19",
+             as.Date("2010-01-01") <= REPORT_DATE ~ "Low-Rate Expansion",
+             as.Date("2008-01-01") <= REPORT_DATE ~ "Financial Crisis",
+             TRUE ~ "Pre-Crisis"
+           )
+         )
 
 apple_exec_words <- apple_final |>
   filter(role == "Executive") |>
@@ -219,9 +215,147 @@ apple_exec_words |>
         title = "Net Loughran Sentiment for Apple Executives per 100 Words",
         x = "Earnings Call Date",
         y = "Net Sentiment per 100 Words",
-      )
+      ) +
+  scale_x_date(date_breaks = "10 years", date_labels = "%Y")
 ```
 
-This is a bar chart showing the net Loughran sentiment for Apple executives per 100 words. Loughran sentiment is a finance-specific sentiment lexicon, and net sentiment per 100 words is calculated by subtracting the number of negative words from the number of positive words, and then dividing by the total number of words and multiplying by 100 to standardize for the length of each earnings call. The graph is then faceted into sentiment in the prepared remarks from executives and the Q&A executive statements. Earnings call dates span from 2006 to 2025. It is also important to know that rows were dropped from 2005, 2007, and 2013, due to missing data. Net sentiment per 100 words ranges from 0 to 3.
+This is a bar chart showing the net Loughran sentiment for Apple executives per 100 words. Loughran sentiment is a finance-specific sentiment lexicon, and net sentiment per 100 words is calculated by subtracting the number of negative words from the number of positive words, and then dividing by the total number of words and multiplying by 100 to standardize for the length of each earnings call. The graph is then faceted into sentiment in the prepared remarks from executives and the Q&A executive statements. Earnings call dates span from 2006 to 2025. Net sentiment per 100 words ranges from 0 to 3.
 
 Sentiment remains net positive across all earnings calls in both the prepared and Q&A sections. For the prepared section, sentiment trends in the positive direction over time. Q&A sentiment remains generally stable, on average, despite fluctuations. Sentiment is significantly higher across time for prepared remarks in comparison to Q&A remarks.
+
+Overall, executives are able to maintain positive sentiment across all earnings calls. However, it is clear to see that Q&A sections force executives to deal with more complex issues. This is reflected by lower sentiment across this plot. We now shift our analysis to identify what specific words were prevalent across eras.
+
+# tf-idf by Apple and Macroeconomic Eras
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 7
+#| fig-height: 3.5
+more_anti <- tibble(word = c(
+  "peter", "luca", "tim", "steve", "kevan", "nancy", "tejas", "saori", "suhasini", "charlie", "katy", "toni", "gene", "shannon", "ben", "bill", "keith", "mike", "amit", "wamsi", "erik",   "krish", "samik", "chris", "jim", "richard", "mark", "rebecca", "don't", "we're",  "fearnley", as.character(2005:2025)
+))
+
+apple_tfidf_comp <- apple_exec_words |>
+  anti_join(stop_words) |>
+  anti_join(more_anti) |>
+  count(company_era, word) |>
+  bind_tf_idf(word, company_era, n)
+
+apple_tfidf_comp |>
+  group_by(company_era) |>
+  slice_max(tf_idf, n=10) |>
+  mutate(company_era = factor(company_era, levels = c("Jobs", "Early Cook", "Recent Cook"))) |>
+  ggplot(aes(x = reorder_within(word, tf_idf, company_era), y = tf_idf, fill = company_era)) +
+    geom_col(show.legend = FALSE) +
+    coord_flip() +
+    scale_x_reordered() +
+    facet_wrap(~company_era, scales = "free") +
+    scale_fill_manual(values = c("Jobs" = "#86868B", "Early Cook" = "#1D1D1F", "Recent Cook" = "#0071E3")) +
+    theme_minimal() +
+    labs(
+      x = "Words",
+      y = "tf-idf",
+      title = "Top 10 Words by tf-idf across Apple Eras"
+    ) + 
+    theme(axis.text.x = element_blank())
+```
+
+This is a bar chart illustrating the top 10 words by tf-idf statistics faceted by company era. Company eras are divided into Steve Job's time as CEO, as well as Tim Cook's early and recent time as CEO. tf-idf statistics are on the x-axis, and the top words are on the y-axis, with the highest values at the top.
+
+Firstly, each era matches Apple's main product line. Earliest words include ipods, mp3, and macworld, which then transition into iPhone's (4s, 5s) and new software such as iCloud and Siri. Finally, top recent words include subscriptions, AI, and 5g (and even Covid!). An interesting finding from this visualization is the transition that Apple has had from a product-based company (iPhones, iCloud, and other applications) to a larget focus on hardware, chips, and wearables. Furthermore, Apple's subscription-based pricing philosophy also emerges as a trend in recent years.
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 7
+#| fig-height: 3.5
+apple_tfidf_macro <- apple_exec_words |>
+  anti_join(stop_words) |>
+  anti_join(more_anti) |>
+  count(macro_era, word) |>
+  bind_tf_idf(word, macro_era, n)
+
+apple_tfidf_macro |>
+  group_by(macro_era) |>
+  slice_max(tf_idf, n=10) |>
+  mutate(macro_era = factor(macro_era, levels = c("Pre-Crisis", "Financial Crisis", "Low-Rate Expansion", "COVID-19", "Inflation & Rate Hikes", "AI Boom"))) |>
+  ggplot(aes(x = reorder_within(word, tf_idf, macro_era), y = tf_idf, fill = macro_era)) +
+    geom_col(show.legend = FALSE) +
+    coord_flip() +
+    scale_x_reordered() +
+    facet_wrap(~macro_era, scales = "free") +
+    scale_fill_manual(values = c(
+        "Pre-Crisis"             = "#A1A1A6",
+        "Financial Crisis"       = "#6E6E73",
+        "Low-Rate Expansion"     = "#1D1D1F",
+        "COVID-19"               = "#00366F",
+        "Inflation & Rate Hikes" = "#0058B0",
+        "AI Boom"                = "#0071E3"
+    )) +
+    theme_minimal() +
+    labs(
+      x = "Words",
+      y = "tf-idf",
+      title = "Top 10 Words by tf-idf across Macroeconomic Eras"
+    ) +
+    theme(axis.text.x = element_blank())
+```
+
+Similarly, this is a bar chart illustrating the top 10 words by tf-idf statistics faceted by macroeconomic era. Macroeconomic eras are divided into Pre-Crisis (05-08), Financial Crisis (08-10), Low-Rate Expansion (11-19), COVID-19 (20-21), Inflation & Rate Hikes (22-23), and AI Boom (24-present). tf-idf statistics are on the x-axis, and the top words are on the y-axis, with the highest values at the top.
+
+While the financial crisis is not an emergent theme, COVID-19 is highlighted (covid, pandemic, closures, lockdowns, closed). It appears that Apple suffered a stronger impact from the pandemic. Apple's calls also address macro trends (macroeconomic, headwinds, tarrif), indicating strong focus on external conditions. AI developments dominate the most recent era (ai, intelligence, vision). Recent calls also appear to be quite confident (records mentioned 3x, digits).
+
+# Stock Price and Net Sentiment Relationship
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+apple_netsent <- apple_exec_words |>
+  filter(section == "Q&A") |>
+  inner_join(loughran, relationship = "many-to-many") |>
+  count(REPORT_DATE, sentiment, total_words) |>
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) |> 
+  mutate(net = ((positive - negative) / total_words) * 100)
+
+apple_spy_prices <- tq_get(
+  c("AAPL", "SPY"),
+  from = "2006-01-01",
+  to = "2025-12-31"
+)
+
+apple_spy_prices <- apple_spy_prices |>
+  group_by(symbol) |>
+  mutate(
+    prev_date = date - 1,
+    returns = (close - lag(close)) / lag(close)
+  ) |>
+  ungroup() |>
+  select(date, prev_date, symbol, returns) |>
+  pivot_wider(names_from = symbol, values_from = returns) |>
+  mutate(excess_returns = AAPL - SPY)
+
+apple_netsent <- apple_netsent |>
+  left_join(apple_spy_prices, by = join_by(REPORT_DATE == prev_date))
+
+apple_netsent |>
+  ggplot(aes(x = net, y = excess_returns)) +
+  geom_point(color = "#0071E3") +
+  geom_smooth(method = "lm", se = FALSE, color = "#1D1D1F") +
+  labs(
+    x = "Net Sentiment",
+    y = "Excess Returns",
+    title = "Excess Returns by Net Sentiment for Apple Earnings Calls"
+  ) +
+  theme_minimal()
+```
+
+This is a scatterplot with net sentiment on the x-axis and excess returns on the y-axis. Net sentiment ranges from 0 to about 2.2. Excess returns range from -0.15 and 0.15. A linear regression line is also drawn on the points.
+
+It is important to note that net sentiment was calculated using Q&A executive sentiment, as we have found that prepared remark sentiment is often consitently inflated.
+
+Unfortunately, there appears to be a slightly negative relationship between sentiment and excess returns. It appears that Apple earnings call sentiment is not predictive of next day excess returns for AAPL stock. It is likely that a deeper analysis of the financial measurements provided in the earnings call can provide more predictive power in this context. Furthermore, a more complex sentiment analysis that takes context of words into account may also yield improved results.
+
