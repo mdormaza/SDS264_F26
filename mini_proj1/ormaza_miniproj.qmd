@@ -1,5 +1,6 @@
 ---
-title: "Mini-Project #1"
+title: "Mini-Project #1 - Apple Earnings Calls Sentiment Analysis"
+subtitle: 'Mateo Ormaza'
 format:
   pdf: default
 editor_options: 
@@ -174,7 +175,7 @@ apple_final <- apple_final |>
 #| warning: false
 #| message: false
 #| fig-width: 7
-#| fig-height: 3.5
+#| fig-height: 5
 loughran <- get_sentiments("loughran") # finance specific sentiment system
 
 apple_final <- apple_final |>
@@ -216,7 +217,7 @@ apple_exec_words |>
         x = "Earnings Call Date",
         y = "Net Sentiment per 100 Words",
       ) +
-  scale_x_date(date_breaks = "10 years", date_labels = "%Y")
+  scale_x_date(date_breaks = "5 years", date_labels = "%Y")
 ```
 
 This is a bar chart showing the net Loughran sentiment for Apple executives per 100 words. Loughran sentiment is a finance-specific sentiment lexicon, and net sentiment per 100 words is calculated by subtracting the number of negative words from the number of positive words, and then dividing by the total number of words and multiplying by 100 to standardize for the length of each earnings call. The graph is then faceted into sentiment in the prepared remarks from executives and the Q&A executive statements. Earnings call dates span from 2006 to 2025. Net sentiment per 100 words ranges from 0 to 3.
@@ -262,9 +263,11 @@ apple_tfidf_comp |>
     theme(axis.text.x = element_blank())
 ```
 
-This is a bar chart illustrating the top 10 words by tf-idf statistics faceted by company era. Company eras are divided into Steve Job's time as CEO, as well as Tim Cook's early and recent time as CEO. tf-idf statistics are on the x-axis, and the top words are on the y-axis, with the highest values at the top.
+This is a bar chart illustrating the top 10 words by tf-idf statistics faceted by company era. Company eras are divided into Steve Jobs' time as CEO, as well as Tim Cook's early and recent time as CEO. tf-idf statistics are on the x-axis, and the top words are on the y-axis, with the highest values at the top.
 
-Firstly, each era matches Apple's main product line. Earliest words include ipods, mp3, and macworld, which then transition into iPhone's (4s, 5s) and new software such as iCloud and Siri. Finally, top recent words include subscriptions, AI, and 5g (and even Covid!). An interesting finding from this visualization is the transition that Apple has had from a product-based company (iPhones, iCloud, and other applications) to a larget focus on hardware, chips, and wearables. Furthermore, Apple's subscription-based pricing philosophy also emerges as a trend in recent years.
+Firstly, each era matches Apple's main product line. Earliest words include ipods, mp3, and macworld, which then transition into iPhones (4s, 5s) and new software such as iCloud and Siri. Finally, top recent words include subscriptions, AI, and 5g (and even Covid!). An interesting finding from this visualization is the transition that Apple has had from individual products (iPhones, iCloud, and other applications) to a larger focus on an ecosystem of hardware, chips, and wearables. Furthermore, Apple's subscription-based pricing philosophy also emerges as a trend in recent years.
+
+Overall, the words that distinguish each era of Apple's success highlight Apple's evolution into an ecosystem of products. Executives are now placing more emphasis on developments in AI and the systems that connect Apple's software and hardware. In recent years, Apple's business model has grown from selling individual products to selling a system of phones, powerful computers, and software that connect these products. We will now shift our analytical focus into Apple's responses to macroeconomic shifts such as financial crises, pandemics, and inflation.
 
 ```{r}
 #| echo: false
@@ -304,9 +307,11 @@ apple_tfidf_macro |>
     theme(axis.text.x = element_blank())
 ```
 
-Similarly, this is a bar chart illustrating the top 10 words by tf-idf statistics faceted by macroeconomic era. Macroeconomic eras are divided into Pre-Crisis (05-08), Financial Crisis (08-10), Low-Rate Expansion (11-19), COVID-19 (20-21), Inflation & Rate Hikes (22-23), and AI Boom (24-present). tf-idf statistics are on the x-axis, and the top words are on the y-axis, with the highest values at the top.
+Similarly, this is a bar chart illustrating the top 10 words by tf-idf statistics faceted by macroeconomic era. Macroeconomic eras are divided into Pre-Crisis (06-07), Financial Crisis (08-09), Low-Rate Expansion (10-19), COVID-19 (20-21), Inflation & Rate Hikes (22-23), and AI Boom (24-present). tf-idf statistics are on the x-axis, and the top words are on the y-axis, with the highest values at the top.
 
-While the financial crisis is not an emergent theme, COVID-19 is highlighted (covid, pandemic, closures, lockdowns, closed). It appears that Apple suffered a stronger impact from the pandemic. Apple's calls also address macro trends (macroeconomic, headwinds, tarrif), indicating strong focus on external conditions. AI developments dominate the most recent era (ai, intelligence, vision). Recent calls also appear to be quite confident (records mentioned 3x, digits).
+While the financial crisis is not an emergent theme, COVID-19 is highlighted (covid, pandemic, closures, lockdowns, closed). It appears that Apple suffered a stronger impact from the pandemic. Apple's calls also address macro trends (macroeconomic, headwinds, tariff), indicating strong focus on external conditions. AI developments dominate the most recent era (ai, intelligence, vision). Recent calls also appear to be quite confident (records in 3 eras, digits).
+
+Overall, there is a strong presence of macroeconomic context in Apple's earnings calls. We can expect that a lot of this is used to contextualize and defend Apple's performance. For example, executives might use COVID-19 to justify recent constraints as market-wide issues instead of a company weakness. Furthermore, Apple's embracement of AI is highlighted alongside optimistic terms, indicating a strong confidence in the company's ability to thrive in the age of AI. 
 
 # Stock Price and Net Sentiment Relationship
 
@@ -355,7 +360,14 @@ apple_netsent |>
 
 This is a scatterplot with net sentiment on the x-axis and excess returns on the y-axis. Net sentiment ranges from 0 to about 2.2. Excess returns range from -0.15 and 0.15. A linear regression line is also drawn on the points.
 
-It is important to note that net sentiment was calculated using Q&A executive sentiment, as we have found that prepared remark sentiment is often consitently inflated.
+It is important to note that net sentiment was calculated using Q&A executive sentiment, as we have found that prepared remark sentiment is often consistently inflated. Excess returns are defined as AAPL's close-to-close returns the trading day after the earnings calls minus those of the S&P 500.
 
-Unfortunately, there appears to be a slightly negative relationship between sentiment and excess returns. It appears that Apple earnings call sentiment is not predictive of next day excess returns for AAPL stock. It is likely that a deeper analysis of the financial measurements provided in the earnings call can provide more predictive power in this context. Furthermore, a more complex sentiment analysis that takes context of words into account may also yield improved results.
+Unfortunately, there appears to be no strong relationship between sentiment and excess returns. Apple earnings call sentiment is not predictive of next day excess returns for AAPL stock. It is likely that a deeper analysis of the financial measurements provided in the earnings call can provide more predictive power in this context. Furthermore, a more complex sentiment analysis that takes context of words into account may also yield improved results.
 
+# Conclusion
+
+Across earnings calls from 2006 to 2025, Apple executives maintained overall positive remarks. However, these remarks were significantly more positive in their prepared speeches than in the Q&A section. This gap has also widened over time, with prepared remarks becoming more positive despite answers to analysts remaining relatively stable, on average.
+
+Vocabularies in Apple earnings calls have also evolved over time. These shifts in vocabulary, measured by tf-idf statistics, illustrate Apple's evolution from an individual product oriented company to a strong focus on an entire ecosystem that contains a combination of phones, computers, tablets, wearables, chips, and software that all interact with each other. Furthermore, executive word choice also tends to reflect general macroeconomic trends. For example, mentions of COVID-19 and lockdowns are prevalent in the 2020-21 time frame. There appears to be strong global contextualization in these earnings calls, making investors aware of market-wide trends that have impacted Apple in various ways.
+
+Finally, unfortunately, our sentiment analysis did not prove to provide any predictive power on excess returns for AAPL stock. Future work may include a more complex analysis of the natural language used in earnings calls. Such a modeling technique may include deeper contextualization on how each word is used, or perhaps also analysis on how different financial measurements were discussed.
