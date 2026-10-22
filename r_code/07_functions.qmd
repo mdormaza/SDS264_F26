@@ -32,6 +32,7 @@ A good rule of thumb is to consider writing a function whenever you’ve copied 
 # Initial packages required (we'll be adding more)
 library(tidyverse)
 library(nycflights13)
+library(lubridate)
 ```
 
 
@@ -571,24 +572,121 @@ flights |> histogram(air_time, 35)
 
 1. Rewrite this code snippet as a function: `x / sum(x, na.rm = TRUE)`.  This code creates weights which sum to 1, where NA values are ignored. Test it for at least two different vectors. (Make sure at least one has NAs!)
 
+```{r}
+make_weights <- function(x) {
+  x / sum(x, na.rm = TRUE)
+}
+
+numbers1 <- c(1, 2, 3)
+numbers2 <- c(0, 1, 2, 3, NA)
+
+make_weights(numbers1)
+make_weights(numbers2)
+```
+
 
 2. Create a function to calculate the standard error of a variable, where SE = square root of the variance divided by the sample size.  Hint: start with a vector like `x <- 0:5` or `x <- gss_cat$age` and write code to find the SE of x, then turn it into a function to handle any vector `x`. Note: `var` is the function to find variance in R and `sqrt` does square root. `length` may also be handy. Test your function on two vectors that do not include NAs  (i.e. do **not** worry about removing NAs at this point).
 
+```{r}
+standard_error <- function(x) {
+  se = sqrt(var(x) / length(x))
+  return(se)
+}
+
+sample1 <- c(1,2,3,4,5)
+standard_error(numbers1)
+standard_error(sample1)
+```
 
 3. Use your `se` function within summarize to get a table of the mean and s.e. of `hwy` and `cty` by `class` in the `mpg` dataset.
+
+```{r}
+mpg |>
+  group_by(class) |>
+  summarize(
+    mean_hwy = mean(hwy),
+    se_hwy = standard_error(hwy),
+    mean_cty = mean(cty),
+    se_cty = standard_error(cty),
+  )
+```
 
 
 4. Use your `se` function within summarize to get a table of the mean and s.e. of `arr_delay` and `dep_delay` by carrier in the `flights` dataset. Why does the output look like this?
 
+```{r}
+flights |>
+  group_by(carrier) |>
+  summarize(
+    mean_arr_delay = mean(arr_delay),
+    se_arr_delay = standard_error(arr_delay),
+    mean_dep_delay = mean(dep_delay),
+    se_dep_delay = standard_error(dep_delay)
+  )
+```
+
+There are a lot of NA values, since we haven't ignored them in our function.
 
 5. Make your `se` function handle NAs with an na.rm option. Test your new function (you can call it `se` again) on a vector that doesn't include NA and on the same vector with an added NA. **Be sure to check that it gives the expected output with na.rm = TRUE and na.rm = FALSE.** Make na.rm = FALSE the default value. Repeat #4.  (Hint: be sure when you divide by sample size you don't count any NAs)
 
+```{r}
+standard_error <- function(x, na.rm = FALSE) {
+  se = sqrt(var(x, na.rm = na.rm) / sum(!is.na(x)))
+  return(se)
+}
+
+flights |>
+  group_by(carrier) |>
+  summarize(
+    mean_arr_delay = mean(arr_delay, na.rm = TRUE),
+    se_arr_delay = standard_error(arr_delay, na.rm = TRUE),
+    mean_dep_delay = mean(dep_delay, na.rm = TRUE),
+    se_dep_delay = standard_error(dep_delay, na.rm = TRUE)
+  )
+```
 
 6. Create `both_na()`, a function that takes two vectors of the same length and returns how many positions have an NA in both vectors.  Hint: create two vectors like `test_x <- c(1, 2, 3, NA, NA)` and `test_y <- c(NA, 1, 2, 3, NA)` and write code that works for `test_x` and `test_y`, then turn it into a function that can handle any `x` and `y`.  (In this case, the answer would be 1, since both vectors have NA in the 5th position.)  Test it for at least one more combination of `x` and `y`.
 
+```{r}
+both_na <- function(x, y) {
+  na_x <- is.na(x)
+  na_y <- is.na(y)
+  
+  matching_na <- na_x[TRUE] & na_y[TRUE]
+  sum_na <- sum(matching_na[TRUE])
+  
+  return(sum_na)
+}
+
+test_x <- c(1, 2, 3, NA, NA)
+test_y <- c(NA, 1, 2, 3, NA)
+
+both_na(test_x, test_y)
+```
 
 7. Run your code from (6) with the following two vectors: `test_x <- c(1, 2, 3, NA, NA, NA)` and `test_y <- c(NA, 1, 2, 3, NA)`. Did you get the output you wanted or expected?  Modify your function using `if`, `else`, and `stop` to print an error if x and y are not the same length.  Then test again with `test_x`, `test_y` and the sets of vectors you used in (6).
 
+```{r}
+test_x2 <- c(1, 2, 3, NA, NA, NA)
+test_y2 <- c(NA, 1, 2, 3, NA)
+both_na(test_x2, test_y2)
+
+both_na <- function(x, y) {
+  ifelse(
+    length(x) == length(y), 
+    sum(is.na(x) & is.na(y)),
+    stop("Lengths do not match."))
+}
+
+test_x <- c(1, 2, 3, NA, NA)
+test_y <- c(NA, 1, 2, 3, NA)
+
+test_x2 <- c(1, 2, 3, NA, NA, NA)
+test_y2 <- c(NA, 1, 2, 3, NA)
+
+both_na(test_x, test_y)
+both_na(test_x2, test_y2)
+```
 
 8. Here is a way to get `not_cancelled` flights in the flights dataset:
 
@@ -599,13 +697,25 @@ not_cancelled <- flights |>
 
 Is it necessary to check is.na for both departure and arrival? Using summarize, find the number of flights missing departure delay, arrival delay, and both. (Use your new function!)
 
+```{r}
+flights |>
+  summarize(
+    both = both_na(dep_delay, arr_delay),
+    dep = sum(is.na(dep_delay)),
+    arr = sum(is.na(arr_delay))
+  )
+```
+
+Every missing departure delay also has a missing arrival delay. 
 
 9. Read the code for each of the following three functions, puzzle out what they do, and then brainstorm better names.
 
 ```{r}
 #| eval: FALSE
 
-f1 <- function(time1, time2) {
+# This takes 2 times, finds difference
+
+time_difference <- function(time1, time2) {
   hour1 <- time1 %/% 100
   min1 <- time1 %% 100
   hour2 <- time2 %/% 100
@@ -615,12 +725,16 @@ f1 <- function(time1, time2) {
 }
 
 
-f2 <- function(lengthcm, widthcm) {
+# Takes cm length/width and provides square inch area
+
+cms_to_inch_area <- function(lengthcm, widthcm) {
   (lengthcm / 2.54) * (widthcm / 2.54)
 }
 
 
-f3 <- function(x) {
+# Standardizes non-answers 
+
+standardize_na <- function(x) {
   fct_collapse(x, "non answer" = c("No answer", "Refused", 
                                    "Don't know", "Not applicable"))
 }
@@ -635,23 +749,127 @@ foo1 <- function(x) {
   diff <- x[-1] - x[1:(length(x) - 1)]
   sum(diff < 0)
 }
+
+x1 <- c(1, 2, 3, 4, 5)
+y1 <- c(5, 4, 3, 2, 1)
+z1 <- c(0, 0, 0 , 0, 0)
+
+foo1(x1)
+foo1(y1)
+foo1(z1)
 ```
 
+Count the number of values that are larger than the next.
 
 11. The `foo1()` function doesn't perform well if a vector has missing values.  Amend `foo1()` so that it produces a helpful error message and stops if there are any missing values in the input vector.  Show that it works with appropriately chosen vectors `x`.  Be sure you add `error = TRUE` to your R chunk, or else knitting will fail!
 
+```{r}
+#| error: TRUE
+
+foo1 <- function(x) {
+  if (sum(is.na(x) != 0)) {
+    stop("NA values in the vector.")
+  }
+  diff <- x[-1] - x[1:(length(x) - 1)]
+  sum(diff < 0)
+}
+
+x1 <- c(1, 2, 3, 4, 5)
+y1 <- c(5, 4, 3, 2, 1)
+z1 <- c(0, 0, 0 , 0, 0)
+x2 <- c(NA, 1, 2, 3)
+
+foo1(x1)
+foo1(y1)
+foo1(z1)
+foo1(x2)
+```
 
 12. Write a function called `greet` using `if`, `else if`, and `else` to print out "good morning" if it's before 12 PM, "good afternoon" if it's between 12 PM and 5 PM, and "good evening" if it's after 5 PM.  Your function should work if you input a time like: `greet(time = "2018-05-03 17:38:01 CDT")` or if you input the current time with `greet(time = Sys.time())`.  [Hint: check out the `hour` function in the `lubridate` package]
 
+```{r}
+lubridate::hour("2018-05-03 17:38:01 CDT")
+```
+
+
+```{r}
+greet <- function(time) {
+  user_hour <- hour(time)
+  
+  if (user_hour < 12) {
+    print("good morning")
+  } else if (user_hour < 17) {
+    print("good afternoon")
+  } else{
+    print("good evening")
+  }
+}
+
+greet(time = "2018-05-03 17:38:01 CDT")
+greet(time = "2018-05-03 5:38:01 CDT")
+greet(time = "2018-05-03 14:38:01 CDT")
+greet(time = Sys.time())
+```
 
 13. Modify the `summary6()` function from earlier to add an argument that gives the user an option to remove missing values, if any exist.  Show that your function works for (a) the `hwy` variable in `mpg_tbl <- as_tibble(mpg)`, and (b) the `age` variable in `gss_cat`.
 
+```{r}
+summary6 <- function(data, var, na.rm = FALSE) {
+  data |> summarize(
+    mean = mean({{ var }}, na.rm = na.rm),
+    median = median({{ var }}, na.rm = na.rm),
+    sd = sd({{ var }}, na.rm = na.rm),
+    IQR = IQR({{ var }}, na.rm = na.rm),
+    n = n(),
+    n_miss = sum(is.na({{ var }})),
+    .groups = "drop"    # to leave the data in an ungrouped state
+  )
+}
+
+mpg_tbl <- as_tibble(mpg)
+
+summary6(mpg_tbl, hwy, na.rm = FALSE)
+summary6(mpg_tbl, hwy, na.rm = TRUE)
+summary6(gss_cat, age, na.rm = TRUE)
+summary6(gss_cat, age, na.rm = FALSE)
+```
+
+hwy in mpg_tbl has no NA values, so there is no difference. Note that IQR won't work with NA values, so the user would likely need to remove NAs.
 
 14. Add an argument to (13) to produce summary statistics by group for a second variable (you should now have 4 possible inputs to your function).  Show that your function works for (a) the `hwy` variable in `mpg_tbl <- as_tibble(mpg)` grouped by `drv`, and (b) the `age` variable in `gss_cat` grouped by `partyid`.
 
+```{r}
+summary6 <- function(data, var, group_var, na.rm = FALSE) {
+  data |> 
+    group_by({{ group_var }}) |>
+    summarize(
+      mean = mean({{ var }}, na.rm = na.rm),
+      median = median({{ var }}, na.rm = na.rm),
+      sd = sd({{ var }}, na.rm = na.rm),
+      IQR = IQR({{ var }}, na.rm = na.rm),
+      n = n(),
+      n_miss = sum(is.na({{ var }})),
+      .groups = "drop"    # to leave the data in an ungrouped state
+  )
+}
+
+summary6(mpg_tbl, hwy, drv, na.rm = FALSE)
+summary6(mpg_tbl, hwy, drv, na.rm = TRUE)
+summary6(gss_cat, age, partyid, na.rm = TRUE)
+summary6(gss_cat, age, partyid, na.rm = FALSE)
+```
 
 15. Create a function that has a vector as the input and returns the last value. (Note: Be sure to use a name that does not write over an existing function!)
 
+```{r}
+last_value <- function(x) {
+  return(x[length(x)])
+}
+
+last_value(c(1, 2, 3))
+last_value(c(1, 2, NA))
+last_value(c())
+```
 
 16. Save your final table from (14) and write a function to draw a scatterplot of a measure of center (mean or median - user can choose) vs. a measure of spread (sd or IQR - user can choose), with points sized by sample size, to see if there is constant variance.  Each point should be labeled with partyid, and the plot title should reflect the variables chosen by the user.
 
@@ -668,4 +886,3 @@ party_age |>
     geom_label_repel(aes(label = partyid)) +
     labs(title = "Mean vs SD")
 ```
-
