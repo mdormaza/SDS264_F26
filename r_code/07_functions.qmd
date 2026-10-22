@@ -855,7 +855,7 @@ summary6 <- function(data, var, group_var, na.rm = FALSE) {
 
 summary6(mpg_tbl, hwy, drv, na.rm = FALSE)
 summary6(mpg_tbl, hwy, drv, na.rm = TRUE)
-summary6(gss_cat, age, partyid, na.rm = TRUE)
+party_age <- summary6(gss_cat, age, partyid, na.rm = TRUE)
 summary6(gss_cat, age, partyid, na.rm = FALSE)
 ```
 
@@ -877,12 +877,17 @@ Hint: start with a ggplot with no user input, and then functionize:
 
 ```{r}
 #| eval: FALSE
-
 library(ggrepel)
-party_age |>
-  ggplot(aes(x = mean, y = sd)) + 
-    geom_point(aes(size = n)) +
-    geom_smooth(method = lm) +
-    geom_label_repel(aes(label = partyid)) +
-    labs(title = "Mean vs SD")
+
+check_equal_var <- function(data, center, spread, label) {
+  mytitle <- rlang::englue("Plot of {{ center }} and {{ spread}}")
+  data |>
+    ggplot(aes(x = {{ center }}, y = {{ spread }})) + 
+      geom_point(aes(size = n)) +
+      geom_smooth(method = lm) +
+      geom_label_repel(aes(label = {{ label }})) +
+      labs(title = mytitle)
+}
+
+check_equal_var(party_age, median, IQR, partyid)
 ```
