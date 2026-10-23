@@ -498,6 +498,20 @@ You could then save your result using `write_csv` so you don't have to run the r
 
 1. Compute the mean of every column of the `mtcars` data set using (a) a for loop, (b) a `map` function, (c) the across() function, and (d) pivot_longer().
 
+```{r}
+output <- vector("double", ncol(mtcars))
+for(i in 1:ncol(mtcars)) {
+  output[[i]] <- mean(mtcars[[i]])
+}
+output
+
+mtcars |>
+  map_dpl(mean)
+
+mtcars |> 
+  summarize(across(everything(), mean))
+```
+
 
 2. Write a function that prints the mean of each *numeric* column in a data frame.  Try it on the `iris` data set. (Hint: `keep(is.numeric)`)
 
