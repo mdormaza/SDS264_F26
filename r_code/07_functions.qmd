@@ -1,7 +1,7 @@
 ---
 title: "Functions and tidy evaluation"
 format:
-  html: default
+  pdf: default
 editor_options: 
   chunk_output_type: console
 ---
@@ -226,8 +226,9 @@ df |>
   mutate(new_a = rescale_basic(a))
 ```
 
-**[Pause to Ponder:]** Do you notice anything in the output above that gives you pause?  
+**[Pause to Ponder:]** Do you notice anything in the output above that gives you pause? 
 
+We removed the entire row. So, even though we only had an NA value in column a, we still removed all of our values for b, c, d in that row.
 
 #### Create an if statement to check if there are NAs; return an error if NAs exist
 
@@ -244,6 +245,11 @@ wt_mean(1:6, 1:3)
 
 **[Pause to Ponder:]** Why is the answer to the last call above 7.67?  Aren't we taking a weighted mean of 1-6, all of which are below 7?
 
+Since our w input is smaller than the x input, it just recycles the vector when we multiply and sum components.. So, we are now using the vectors 1:6 and 1:3 repeated twice in the first sum. The numerator is 1 + 4 + 9 + 4 + 10 + 18 = 46 and the denominator is still 1 + 2 + 3 = 6.
+
+```{r}
+46/6
+```
 
 ```{r}
 #| error: TRUE
@@ -261,7 +267,10 @@ wt_mean(1:6, 1:3)
 #  - nice example of if and else
 ```
 
+
 **[Pause to Ponder:]** What does the `call.` option do?
+
+When call. = FALSE, the error message does not state the function name. Otherwise, it specifically says "Error in wt_mean(1:6, 1:3):..."
 
 
 Now let's apply this to our rescaling function
@@ -286,6 +295,7 @@ rescale_w_error(temp)
 
 **[Pause to Ponder:]** Why can't we just use `if (is.na(x))` instead of `is.na(sum(x))`?
 
+is.na(x) will only return TRUE if all values in x are NA. We want to check for any number of NAs. The sum will return TRUE if 1 or more values are NA, giving us the result we want.
 
 #### Create a removeNAs option in the function we are creating
 
@@ -407,6 +417,10 @@ You can even pass conditions into a function using the embrace:
 
 **[Pause to Ponder:]** Predict what the code below will do, and (only) then run it to check.  Think about: why do we have `sort = sort`?  why not embrace `df`? why didn't we need `n` in the arguments?
 
+The function will filter for a given condition, count the number of values for a given variable and then sort from largest to smallest. Then, give the proportion that each value has out of the entire number of observations for the variable. We call the function on our mpg dataset, summarizing the manufacturer variable with the steps identified above, and only include manufacturers in the stated vector.
+
+df is a dataset that is passed in, and only condition and var are data-variables that require masking.  Sort is not a data-variable and just is a user input that will dictate how the data is sorted. n is a variable that is created when we use the count function.
+
 ```{r}
 #| eval: FALSE
 
@@ -473,6 +487,10 @@ flights |>
 
 **[Pause to Ponder:]** Here's another nice use of `pick()`.  Predict what the function will do, then run the code to see if you are correct.
 
+Select the columns whose combinations of values will now become our rows. Select columns whose values will now become our columns. Values will be counts.
+
+For this example, our rows each represent a combination of manufacturer and model. Our columns are the values for cyl. The values are simply the counts for the respective manufacturer and model combinations and the cyl value.
+
 ```{r}
 #| eval: FALSE
 
@@ -490,7 +508,6 @@ new_function <- function(data, rows, cols) {
 
 mpg |> new_function(c(manufacturer, model), cyl)
 ```
-
 
 ## Plot functions
 
@@ -567,7 +584,6 @@ histogram <- function(df, var, bins) {
 flights |> histogram(air_time, 35)
 ```
 
-
 ### On Your Own
 
 1. Rewrite this code snippet as a function: `x / sum(x, na.rm = TRUE)`.  This code creates weights which sum to 1, where NA values are ignored. Test it for at least two different vectors. (Make sure at least one has NAs!)
@@ -583,7 +599,6 @@ numbers2 <- c(0, 1, 2, 3, NA)
 make_weights(numbers1)
 make_weights(numbers2)
 ```
-
 
 2. Create a function to calculate the standard error of a variable, where SE = square root of the variance divided by the sample size.  Hint: start with a vector like `x <- 0:5` or `x <- gss_cat$age` and write code to find the SE of x, then turn it into a function to handle any vector `x`. Note: `var` is the function to find variance in R and `sqrt` does square root. `length` may also be handy. Test your function on two vectors that do not include NAs  (i.e. do **not** worry about removing NAs at this point).
 
@@ -610,7 +625,6 @@ mpg |>
     se_cty = standard_error(cty),
   )
 ```
-
 
 4. Use your `se` function within summarize to get a table of the mean and s.e. of `arr_delay` and `dep_delay` by carrier in the `flights` dataset. Why does the output look like this?
 
@@ -667,9 +681,7 @@ both_na(test_x, test_y)
 7. Run your code from (6) with the following two vectors: `test_x <- c(1, 2, 3, NA, NA, NA)` and `test_y <- c(NA, 1, 2, 3, NA)`. Did you get the output you wanted or expected?  Modify your function using `if`, `else`, and `stop` to print an error if x and y are not the same length.  Then test again with `test_x`, `test_y` and the sets of vectors you used in (6).
 
 ```{r}
-test_x2 <- c(1, 2, 3, NA, NA, NA)
-test_y2 <- c(NA, 1, 2, 3, NA)
-both_na(test_x2, test_y2)
+#| error: true
 
 both_na <- function(x, y) {
   ifelse(
@@ -706,7 +718,7 @@ flights |>
   )
 ```
 
-Every missing departure delay also has a missing arrival delay. 
+Every missing departure delay also has a missing arrival delay. So, we can just count the number of departure delays.
 
 9. Read the code for each of the following three functions, puzzle out what they do, and then brainstorm better names.
 
@@ -740,7 +752,6 @@ standardize_na <- function(x) {
 }
 
 ```
-
 
 10. Explain what the following function does and demonstrate by running `foo1(x)` with a few appropriately chosen vectors `x`.  (Hint: set x and run the "guts" of the function piece by piece.)
 
@@ -788,11 +799,6 @@ foo1(x2)
 12. Write a function called `greet` using `if`, `else if`, and `else` to print out "good morning" if it's before 12 PM, "good afternoon" if it's between 12 PM and 5 PM, and "good evening" if it's after 5 PM.  Your function should work if you input a time like: `greet(time = "2018-05-03 17:38:01 CDT")` or if you input the current time with `greet(time = Sys.time())`.  [Hint: check out the `hour` function in the `lubridate` package]
 
 ```{r}
-lubridate::hour("2018-05-03 17:38:01 CDT")
-```
-
-
-```{r}
 greet <- function(time) {
   user_hour <- hour(time)
   
@@ -831,7 +837,6 @@ mpg_tbl <- as_tibble(mpg)
 summary6(mpg_tbl, hwy, na.rm = FALSE)
 summary6(mpg_tbl, hwy, na.rm = TRUE)
 summary6(gss_cat, age, na.rm = TRUE)
-summary6(gss_cat, age, na.rm = FALSE)
 ```
 
 hwy in mpg_tbl has no NA values, so there is no difference. Note that IQR won't work with NA values, so the user would likely need to remove NAs.
@@ -856,7 +861,6 @@ summary6 <- function(data, var, group_var, na.rm = FALSE) {
 summary6(mpg_tbl, hwy, drv, na.rm = FALSE)
 summary6(mpg_tbl, hwy, drv, na.rm = TRUE)
 party_age <- summary6(gss_cat, age, partyid, na.rm = TRUE)
-summary6(gss_cat, age, partyid, na.rm = FALSE)
 ```
 
 15. Create a function that has a vector as the input and returns the last value. (Note: Be sure to use a name that does not write over an existing function!)
