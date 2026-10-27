@@ -185,6 +185,17 @@ observed_diff <- dolphin_summary[[2]][2] - dolphin_summary[[2]][1]
 
 ### Write a loop to create 1000 simulated differences from the null world
 
+simulated_diffs <- vector("double", 1000)
+for(i in 1:1000) {
+  treatment <- sample(dolphin_data$treatment)
+  dolphin_data |>
+    group_by(treatment) |>
+    summarize(prop_yes = mean(improve == "Yes"))
+  
+  simulated_diff <- dolphin_summary[[2]][2] - dolphin_summary[[2]][1]
+}
+simulated_diffs
+
 # Step 3
 null_world <- tibble(simulated_diffs = simulated_diffs)
 ggplot(null_world, aes(x = simulated_diffs)) +
@@ -506,15 +517,30 @@ for(i in 1:ncol(mtcars)) {
 output
 
 mtcars |>
-  map_dpl(mean)
+  map_dbl(mean)
 
 mtcars |> 
   summarize(across(everything(), mean))
+
+mtcars |>
+  pivot_longer(everything()) |>
+  group_by(name) |>
+  summarise(
+    mean = mean(value)
+  )
 ```
 
 
 2. Write a function that prints the mean of each *numeric* column in a data frame.  Try it on the `iris` data set. (Hint: `keep(is.numeric)`)
 
+```{r}
+compute_means <- function(df) {
+  numeric_df <- keep(df, is.numeric)
+  map_dbl(numeric_df, mean)
+}
+
+compute_means(iris)
+```
 
 3. Eliminate the for loop in each of the following examples by taking advantage of an existing function that works with vectors:
 
@@ -536,9 +562,32 @@ out
 
 ```
 
-
 4. Compute the number of unique values in each column of the `iris` data set using at least 2 of your favorite iteration methods.  Bonus points if you can use pivot_longer()!
 
+```{r}
+output <- vector("double", ncol(iris))
+for(i in 1:ncol(iris)) {
+  output[[i]] <- n_distinct(iris[[i]])
+}
+output
+
+iris |>
+  map_int(n_distinct)
+
+iris |>
+  summarize(
+    across(
+      .cols = everything(),
+      .fns = n_distinct,
+      .names = "distinct_{.col}"
+    )
+  )
+
+iris |>
+  pivot_longer(everything(), values_transform = list(value = as.character)) |>
+  group_by(name) |>
+  summarize(unique_vals = n_distinct(value))
+```
 
 5. Carefully explain each step in the pipeline below:
 
@@ -555,8 +604,26 @@ show_missing <- function(df, group_vars, summary_vars = everything()) {
 nycflights13::flights |> show_missing(c(year, month, day))
 ```
 
+Inputs data frame, variables to group by, and variables to summarize (default is everything). Selects columns where there is at least one NA.
+
+Groups by group variables, find the number of na's across the summary variables.
+
+1 row per day each column, counts na values for that day in each columns.
 
 6. Write a function called `summary_stats()` that allows a user to input a tibble, numeric variables in that tibble, and summary statistics that they would like to see for each variable.  Using `across()`, the function's output should look like the example below.
+
+```{r}
+summary_stats <- function(df, vars, stat_fcts) {
+  df |>
+    summarize(
+      across(
+        {{ vars }},
+        stat_fcts
+      )
+    )
+}
+```
+
 
 ```{r}
 #| eval: FALSE
