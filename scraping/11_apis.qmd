@@ -69,9 +69,7 @@ You'll want to keep your API key handy for when you want to make requests for da
 You could then read in the key with code like this:
 
 ```{r}
-#| eval: FALSE
-
-omdb_api_key <- readLines("~/264_fall_2026/DS2_preview_work/omdb_api_key.txt")
+omdb_api_key <- readLines("scraping/omdb_api")
 ```
 
 While this works, the problem is once we start backing up our files to GitHub, your API key will also appear on GitHub, and your API key will no longer be secret.  To get around this, you can list `omdb_api_key.txt` in a `.gitignore` file, since GitHub does not back up files and folders listed in `.gitignore`.
@@ -119,7 +117,7 @@ We will first obtain data about the movie Coco from 2017.
 # omdb_api_key <- readLines("~/R/SDS264/Inclass_264/OMDB_KEY.txt")
 
 # Alternatively, load your OMDB API key using:
-omdb_api_key <- Sys.getenv("OMDB_KEY")
+# omdb_api_key <- Sys.getenv("OMDB_KEY")
 
 # Find url exploring examples at omdbapi.com
 url <- str_c(
@@ -141,11 +139,10 @@ details[[2]]                    # since a list, another way to access
 1. Build a data set for a collection of movies by completing the **FILL IN** sections in the code below:
 
 ```{r}
-#| eval: FALSE
 
 # Create a vector of 5 movie names you want to study
 #  - must figure out pattern in URL for obtaining different movies
-movies <- c(**FILL IN**)
+movies <- c("fight+club", "street+fighter", "mortal+kombat", "creed", "karate+kid")
 
 # Set up empty tibble
 omdb <- tibble(
@@ -161,18 +158,19 @@ omdb <- tibble(
 # Use for loop to run through API request process 5 times,
 #   each time filling the next row in the tibble
 #  - can do max of 1000 GETs per day
+
 for(i in 1:5) {
-  url <- str_c(**FILL IN**)
+  url <- str_c("http://www.omdbapi.com/?t=", movies[i], "&apikey=", omdb_api_key)
   Sys.sleep(0.5)
   onemovie <- GET(url)
-  details <- content(**FILL IN**)
-  omdb[i,1] <- details$Title
-  omdb[i,2] <- **FILL IN**  # rating
-  omdb[i,3] <- **FILL IN**  # genres (single string - could be more than one)
-  omdb[i,4] <- **FILL IN**  # actors (single string - could be more than one)
-  omdb[i,5] <- **FILL IN**  # metascore (be sure it is numeric)
-  omdb[i,6] <- **FILL IN**  # imdb rating (be sure it is numeric)
-  omdb[i,7] <- **FILL IN**  # box office (be sure it is numeric)
+  details <- content(onemovie, "parse")
+  omdb[i,1] <- details$Title # title
+  omdb[i,2] <- details$Rated # rating
+  omdb[i,3] <- details$Genre  # genres (single string - could be more than one)
+  omdb[i,4] <- details$Actors  # actors (single string - could be more than one)
+  omdb[i,5] <- parse_number(details$Metascore)  # metascore (be sure it is numeric)
+  omdb[i,6] <- parse_number(details$imdbRating)  # imdb rating (be sure it is numeric)
+  omdb[i,7] <- parse_number(details$BoxOffice)  # box office (be sure it is numeric)
 }
 
 omdb
