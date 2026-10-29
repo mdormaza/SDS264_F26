@@ -51,3 +51,5 @@ rsconnect/
 .DS_Store
 
 data/
+
+omdb_api
