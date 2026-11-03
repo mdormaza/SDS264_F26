@@ -142,7 +142,7 @@ details[[2]]                    # since a list, another way to access
 
 # Create a vector of 5 movie names you want to study
 #  - must figure out pattern in URL for obtaining different movies
-movies <- c("fight+club", "street+fighter", "mortal+kombat", "creed", "karate+kid")
+movies <- c("fight+club", "street+fighter", "mortal+kombat", "creed", "Karate+Kid")
 
 # Set up empty tibble
 omdb <- tibble(
@@ -191,10 +191,10 @@ Initial instructions:
 
 ```{r}
 # Load in your API key
-# nps_api_key <- readLines("~/264_fall_2026/DS2_preview_work/nps_api_key.txt")
+nps_api_key <- readLines("scraping/nps_api")
 
 # Alternatively, load your NPS API key using:
-nps_api_key <- Sys.getenv("NPS_KEY")
+# nps_api_key <- Sys.getenv("NPS_KEY")
 
 # Read in park codes from Kaggle
 np_kaggle <- read_csv("Data/parks.csv")
