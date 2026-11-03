@@ -119,6 +119,8 @@ We will first obtain data about the movie Coco from 2017.
 # Alternatively, load your OMDB API key using:
 # omdb_api_key <- Sys.getenv("OMDB_KEY")
 
+omdb_api_key <- readLines("scraping/omdb_api")
+
 # Find url exploring examples at omdbapi.com
 url <- str_c(
   "http://www.omdbapi.com/?t=Coco&y=2017&apikey=", omdb_api_key
@@ -323,10 +325,10 @@ All right, let's try this!  Let's grab total population and median household inc
 #| message: FALSE
 
 # Load in your API key
-# census_api_key <- readLines("~/264_fall_2026/DS2_preview_work/census_api_key.txt")
+census_api_key <- readLines("scraping/census_api")
 
 # Alternatively, load your NPS API key using:
-census_api_key <- Sys.getenv("CENSUS_API_KEY")
+# census_api_key <- Sys.getenv("CENSUS_API_KEY")
 
 url <- str_c("https://api.census.gov/data/2020/acs/acs5?get=NAME,B01003_001E,B19013_001E&for=tract:*&in=state:27&in=county:053", "&key=", census_api_key)
 acs5 <- GET(url)
@@ -386,7 +388,8 @@ hennepin_tidycensus <- tidycensus::get_acs(
     output = "wide",
     geometry = TRUE,
     county = "Hennepin",   # specify county in call
-    show_call = TRUE       # see resulting query
+    show_call = TRUE,       # see resulting query
+    key = census_api_key
 )
 hennepin_tidycensus
 ```
@@ -425,5 +428,38 @@ ggplot(data = hennepin_tidycensus) +
 
 2. Adapt the code in `hennepin_tidycensus` to write a function called `MN_tract_data` to give the user choices about year, county, and variables to pull off.  Show that `MN_tract_data(year = 2021, county = "Hennepin", variables = c("B01003_001", "B19013_001"))` works as expected.  Make sure it also works for other years, counties, and variables (e.g. B25077_001 is median home price and B02001_002 is number of white residents).
 
+```{r}
+MN_tract_data <- function(year, county, variables) {
+  tidycensus::get_acs(
+    year = year,
+    state = "MN",
+    geography = "tract",
+    variables = variables,
+    output = "wide",
+    geometry = TRUE,
+    county = county,   # specify county in call
+    show_call = TRUE,
+    key = census_api_key)       # see resulting query
+}
+
+MN_tract_data(year=2021, county="Hennepin", variables=c("B01003_001", "B19013_001"))
+```
 
 3. Use your function from (2) along with `map` and `list_rbind` to build a data set for Rice county for the years 2019-2021.  Use your scraped data to plot trends in income over time and population over time.
+
+```{r}
+years <- 2019:2021
+
+df_list <- map(years, \(x) MN_tract_data(x, "Rice", c("B01003_001", "B19013_001")) |> mutate(year = x)) 
+
+final_df <- list_rbind(df_list)
+
+final_df <- final_df |>
+  rename(population = B01003_001E,
+         population_moe = B01003_001M,
+         median_income = B19013_001E,
+         median_income_moe = B19013_001M)
+
+final_df
+```
+

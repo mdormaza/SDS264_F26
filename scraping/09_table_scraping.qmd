@@ -128,22 +128,23 @@ bind_cols(mpls_data1, mpls_data2) |>
 
 city_pop <- read_html("https://en.wikipedia.org/wiki/List_of_United_States_cities_by_population")
 
-pop <- html_nodes(???, ???)
+pop <- html_nodes(city_pop, css = "table")
 html_table(pop, header = TRUE, fill = TRUE)  # find right table
-pop2 <- html_table(pop, header = TRUE, fill = TRUE)[[???]]
+pop2 <- html_table(pop, header = TRUE, fill = TRUE)[[3]]
 pop2
 
 # perform the steps above with the polite package
 session <- bow("https://en.wikipedia.org/wiki/List_of_United_States_cities_by_population", force = TRUE)
 
 result <- scrape(session) |>
-  html_nodes(???) |>
+  html_nodes(css = "table") |>
   html_table(header = TRUE, fill = TRUE)
-pop2 <- result[[???]]
+
+pop2 <- result[[3]]
 pop2
 
 pop3 <- as_tibble(pop2[,c(1:6,8)]) |>
-  slice(???) |>
+  slice(-1) |>
   rename(`City` = `Municipality`,
          `State` = `ST`,
          `Estimate2025` = `2025estimate`,
@@ -152,7 +153,7 @@ pop3 <- as_tibble(pop2[,c(1:6,8)]) |>
          `Density` = `2020 density`) |>
   mutate(Estimate2025 = parse_number(Estimate2025),
          Census = parse_number(Census),
-         #Change = ???   # get rid of % but preserve +/- (optional),
+         ### Change = parse_number   # get rid of % but preserve +/- (optional),
          Area = parse_number(Area),
          Density = parse_number(Density)) |> 
   mutate(City = str_replace(City, "\\[.*$", ""))
@@ -160,14 +161,15 @@ pop3
 
 # pick out unusual points
 outliers <- pop3 |> 
-  filter(Estimate2025 > ??? | Area > ???)
+  filter(Estimate2025 > mean(Estimate2025) + 3 * sd(Estimate2025) | Area > mean(Area) + 3 * sd(Area))
+outliers
 
 # This will work if don't turn variables from chr to dbl, but in that 
 #  case notice how axes are just evenly spaced categorical variables
-ggplot(pop3, aes(x = ???, y = ???)) +
+ggplot(pop3, aes(x = Area, y = Estimate2025)) +
   geom_point()  +
   geom_smooth() +
-  ggrepel::geom_label_repel(data = ???, aes(label = ???))
+  ggrepel::geom_label_repel(data = pop3, aes(label = City))
 ```
 
 
