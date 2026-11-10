@@ -37,6 +37,7 @@ Please see `09_table_scraping.qmd` for a preview of web scraping techniques when
 
 ## More scraping ethics
 
+
 ### `robots.txt`
 
 `robots.txt` is a file that some websites will publish to clarify what can and cannot be scraped and other constraints about scraping. When a website publishes this file, this we need to comply with the information in it for moral and legal reasons.
@@ -170,12 +171,22 @@ nih_title
 
 ## On Your Own: 
 
+.thumbnail-teaser__description , .image-style-thumbnail-large
+
 1. Finishing the NIH example
 
 a) Repeat the process above to extract the description (which include the publication date and the abstract):
 
 ```{r}
-# nih_description <-
+session <- bow(
+  "https://www.nih.gov/news-events/news-releases", force = TRUE
+)
+
+nih_description <- scrape(session) |>
+  html_nodes(".thumbnail-teaser__description") |>
+  html_text()
+
+nih_description
 ```
 
 
@@ -186,7 +197,7 @@ b) Combine these extracted variables into a single tibble, with columns called `
 
 # use tibble() to put multiple columns together into a tibble
 nih_top10 <- tibble(
-  title = nih_title, 
+  title = nih_title,
   description = nih_description
 )
 nih_top10
@@ -281,6 +292,11 @@ df_articles2
 and "clean up" each of these elements - i.e. numbers should be <dbl> and free of extras, strings should be <chr>, etc.
 
 You might have to use `read_html_live()` rather than `read_html()`.  It appears the html source code is not static, but the pages at this website gets built out with JavaScript.  `read_html()` should always be used first, but if it fails, then `read_html_live()` can sometimes work, even though it's slower and requires installation of Chrome.
+
+```{r}
+html_nodes(".mt-2 .ms-3 , .text-center div , .col-4 div , .mb-2")
+```
+
 
 
 3. Write a function called `scrape_bestplaces()` with arguments for `state` and `city`.  When you run, for example, `scrape_bestplaces("minnesota", "minneapolis")`, the output should be a 1 x 6 tibble with columns for `state`, `city`, `crime`, `min_income_single`, `rent_2br`, and `about`.

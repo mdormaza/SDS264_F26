@@ -15,6 +15,7 @@ You can download this .qmd file from [here](https://github.com/proback/264_fall_
 library(tidyverse)
 library(rvest)
 library(polite)
+library(janitor)
 ```
 
 
@@ -192,8 +193,81 @@ Try following these steps:
 
 1) Be sure you can find and clean the correct table from the 2001 season.
 
+```{r}
+hockey <- read_html("https://www.hockey-reference.com/teams/MIN/2001.html")
+
+tables <- html_nodes(hockey, css = "table") 
+tables  # have to guesstimate which table contains climate info
+
+html_table(tables, header = TRUE, fill = TRUE)[[3]]
+```
+
 2) Organize your `rvest` code from (1) into functions from the `polite` package.
+
+```{r}
+session <- bow("https://www.hockey-reference.com/teams/MIN/2001.html", force = TRUE)
+
+result <- scrape(session) |>
+  html_nodes(css = "table") |> 
+  html_table(header = TRUE, fill = TRUE)
+
+data <- result[[3]]
+
+data
+
+data <- data |>
+  row_to_names(row_number = 1)
+
+data <- data |>
+    mutate(Year = 2001) |>
+    select(Player, Year, Age, Pos, GP, PTS)
+
+data
+```
 
 3) Place the code from (2) into a function where the user can input a team and year.  You would then adjust the url accordingly and produce a clean table for the user.
 
+```{r}
+hockey_stats <- function(team, year) {
+  url <- str_c("https://www.hockey-reference.com/teams/", team, "/", year, ".html")
+  
+  session <- bow(url, force = TRUE)
+  
+  result <- scrape(session) |>
+  html_nodes(css = "table") |> 
+  html_table(header = TRUE, fill = TRUE)
+  
+  data <- result[[3]]
+  
+  data <- data |>
+    row_to_names(row_number = 1)
+  
+  data <- data |>
+    mutate(Year = year) |>
+    select(Player, Year, Age, Pos, GP, PTS)
+    
+  data
+  
+  return(data)
+}
+```
+
+```{r}
+hockey_stats("MIN", 2001)
+```
+
 4) Use `map2` and `list_rbind` to build one data set containing Minnesota Wild data from 2001-2004.
+
+```{r}
+teams <- c("MIN", "MIN", "MIN", "MIN")
+years <- c(2001:2004)
+
+datasets <- map2(teams, years, hockey_stats)
+
+dataset <- list_rbind(datasets)
+```
+
+```{r}
+dataset
+```
+
