@@ -1,0 +1,26 @@
+---
+title: "broom_testing"
+format: html
+---
+ 
+```{r}
+library(tidyverse)
+data("penguins")
+```
+```{r}
+penguin_lm <- lm(body_mass  ~ flipper_len + species + sex + flipper_len:species, data = penguins)
+
+summary(penguin_lm)
+```
+```{r}
+tidy(penguin_lm)
+```
+
+```{r}
+glance(penguin_lm)
+```
+
+```{r}
+augment(penguin_lm)
+```
+

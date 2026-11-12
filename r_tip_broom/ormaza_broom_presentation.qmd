@@ -1,0 +1,94 @@
+---
+title: "R Tip of the Day"
+subtitle: "The broom package"
+author: "Mateo Ormaza"
+format:
+  revealjs: 
+    slide-number: true
+    chalkboard: 
+      buttons: false
+    preview-links: auto
+    logo: logo.png
+    footer: <https://broom.tidymodels.org>
+editor_options:
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+library(broom)
+library(palmerpenguins)
+```
+
+## What is broom and how is it used? {transition="slide"}
+
+::: incremental
+- broom is an R package that helps convert the outputs of statistical objects into tidy tibbles
+- broom is especially useful for comparing models, visualizing outputs, building organized reports, or analyzing model fits
+- broom is part of the tidyverse ecosystem (installed with tidyverse), but you will need to load either tidymodels or broom itself to use it
+:::
+
+## Methods {transition="slide" auto-animate=true}
+
+::: incremental
+- tidy() - summarize model components
+- glance() - report model-level information
+- augment() - add information about each observation
+:::
+
+## Messy model outputs {transition="slide" auto-animate=true}
+
+```{r}
+#| echo: true
+lm1 <- lm(body_mass_g ~ bill_length_mm, data = penguins)
+summary(lm1)
+```
+
+## Using broom to summarize model components {transition="slide" auto-animate=true}
+
+```{r}
+#| echo: true
+#| code-line-numbers: "2"
+lm1 <- lm(body_mass_g ~ bill_length_mm, data = penguins)
+tidy(lm1)
+```
+
+## Using broom to report model information (and compare models!) {transition="slide" auto-animate=true}
+
+```{r}
+#| echo: true
+#| code-line-numbers: "4"
+lm1 <- lm(body_mass_g ~ bill_length_mm, data = penguins)
+lm2 <- lm(body_mass_g ~ bill_length_mm + species, data = penguins) 
+
+models_df <- rbind(glance(lm1), glance(lm2))
+
+lrt <- 2 * (models_df$logLik[2] - models_df$logLik[1])
+lrt
+```
+
+## Using broom to add information to each observation {transition="slide" auto-animate=true}
+
+```{r}
+#| echo: true
+#| code-line-numbers: "1"
+#| output-location: slide
+augment(lm1) |>
+  ggplot(aes(x = .fitted, y = .resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, color = "Red") +
+  labs(
+    x = "Fitted Values",
+    y = "Residuals",
+    title = "Residual Plot for Linear Regression"
+  )
+```
+
+##  {transition="slide" auto-animate=true}
+
+::: {style="text-align: center; margin-top: 2em; font-size:3em"}
+Thank you!!!
+:::
+
+::: {style="text-align: center"}
+[The broom package](https://broom.tidymodels.org){preview-link="true" style="text-align: center"}
