@@ -428,6 +428,10 @@ density_data <- density_table |>
 density_data
 ```
 
+```{r}
+
+```
+
 
 2. The `states` dataset in the `poliscidata` package contains 135 variables on each of the 50 US states.  See [here](https://www.rdocumentation.org/packages/poliscidata/versions/2.3.0/topics/states) for more detail.
 
