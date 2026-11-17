@@ -293,13 +293,70 @@ and "clean up" each of these elements - i.e. numbers should be <dbl> and free of
 
 You might have to use `read_html_live()` rather than `read_html()`.  It appears the html source code is not static, but the pages at this website gets built out with JavaScript.  `read_html()` should always be used first, but if it fails, then `read_html_live()` can sometimes work, even though it's slower and requires installation of Chrome.
 
+
 ```{r}
-html_nodes(".mt-2 .ms-3 , .text-center div , .col-4 div , .mb-2")
+scraped <- read_html_live("https://bestplaces.net/city/minnesota/minneapolis") |>
+  html_nodes(".mb-2 , .text-center div , .col-4 div , .mt-2 .ms-3") |>
+  html_text()
 ```
 
+```{r}
+scraped1 <- scraped[c(14, 10, 22, 4)]
+scraped1
 
+col_names = c("prop_crime", "min_income", "avg_rent", "about")
+
+scraped2 <- as_tibble_row(set_names(scraped1, col_names))
+scraped2
+
+scraped_final <- scraped2 |>
+  mutate(
+    prop_crime = parse_number((str_remove(prop_crime, " .*"))),
+    min_income = parse_number(min_income),
+    avg_rent = parse_number(avg_rent)
+  )
+
+scraped_final
+```
 
 3. Write a function called `scrape_bestplaces()` with arguments for `state` and `city`.  When you run, for example, `scrape_bestplaces("minnesota", "minneapolis")`, the output should be a 1 x 6 tibble with columns for `state`, `city`, `crime`, `min_income_single`, `rent_2br`, and `about`.
+
+```{r}
+scrape_bestplaces <- function(state, city) {
+  url <- str_c("https://bestplaces.net/city/", state, "/", city)
+  
+  scraped <- read_html_live(url) |>
+    html_nodes(".mb-2 , .text-center div , .col-4 div , .mt-2 .ms-3") |>
+    html_text()
+  
+  scraped1 <- scraped[c(14, 10, 22, 4)]
+  col_names = c("crime", "min_income_single", "rent_2br", "about")
+  scraped2 <- as_tibble_row(set_names(scraped1, col_names))
+  
+  scraped_final <- scraped2 |>
+    mutate(
+      crime = parse_number((str_remove(crime, " .*"))),
+      min_income_single = parse_number(min_income_single),
+      rent_2br = parse_number(rent_2br),
+      state = state,
+      city = city
+    )
+  
+  return(scraped_final)
+}
+```
+
+```{r}
+test_output1 <- scrape_bestplaces("minnesota", "minneapolis")
+test_output2 <- scrape_bestplaces("illinois", "chicago")
+test_output3 <- scrape_bestplaces("wisconsin", "milwaukee")
+```
+
+```{r}
+test_output1
+test_output2
+test_output3
+```
 
 
 4. Create a 5 x 6 tibble by running `scrape_bestplaces()` 5 times with 5 cities you are interested in.  You might have to combine tibbles using `bind_rows()`.  Be sure you look at the URL at bestplaces.net for the various cities to make sure it works as you expect.  For bonus points, create the same 5 x 6 tibble for the same 5 cities using `purrr:map2`!
