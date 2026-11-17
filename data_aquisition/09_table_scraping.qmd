@@ -178,6 +178,43 @@ ggplot(pop3, aes(x = Area, y = Estimate2025)) +
 
 A quick wikipedia search yields [this webpage](https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States_by_population_density) with population densities in a nice table format.  Use our 4 steps to `rvest`ing data to acquire the data, and then create a tidy tibble with one row per state.
 
+```{r}
+# Code from OYO #2 in 09_table_scraping.qmd
+
+library(rvest)
+library(polite)
+
+session <- bow("https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States_by_population_density", force = TRUE)
+
+result <- scrape(session) |>
+  html_nodes(css = "table") |> 
+  html_table(header = TRUE, fill = TRUE)
+density_table <- result[[1]]
+density_table
+
+density_data <- density_table |>
+  select(1, 2, 4, 5) |>
+  filter(!row_number() == 1) |>
+  rename(Land_area = `Land area`) |>
+  mutate(state_name = str_to_lower(as.character(Location)),
+         Density = parse_number(Density),
+         Population = parse_number(Population),
+         Land_area = parse_number(Land_area)) |>
+  select(-Location)
+
+density_data
+```
+
+1-2: Load packages
+3: Read robots.txt and return session object
+4-6: Scrape using session object, find table elements, and turn each table into a dataframe
+7-8: Obtain table we are looking for from list of tables
+9-10: Select first 5 columns
+11: Remove 1st row due to parsing issue
+12: Rename land area
+13-16: Add state variable, parse numbers
+17: Remove location variable
+18: Print final data
 
 3. We would like to create a tibble with 4 years of data (2001-2004) from the Minnesota Wild hockey team.  Specifically, we are interested in the "Standard Stats" table from [this webpage](https://www.hockey-reference.com/teams/MIN/2001.html) and the similar webpages from 2002, 2003, and 2004.  Your final tibble should have 6 columns:  player, year, age, pos (position), gp (games played), and pts (points).
 

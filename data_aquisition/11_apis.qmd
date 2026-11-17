@@ -69,7 +69,7 @@ You'll want to keep your API key handy for when you want to make requests for da
 You could then read in the key with code like this:
 
 ```{r}
-omdb_api_key <- readLines("scraping/omdb_api")
+omdb_api_key <- readLines("data_aquisition/omdb_api")
 ```
 
 While this works, the problem is once we start backing up our files to GitHub, your API key will also appear on GitHub, and your API key will no longer be secret.  To get around this, you can list `omdb_api_key.txt` in a `.gitignore` file, since GitHub does not back up files and folders listed in `.gitignore`.
@@ -141,7 +141,7 @@ details[[2]]                    # since a list, another way to access
 1. Build a data set for a collection of movies by completing the **FILL IN** sections in the code below:
 
 ```{r}
-
+omdb_api_key <- readLines("data_aquisition/omdb_api")
 # Create a vector of 5 movie names you want to study
 #  - must figure out pattern in URL for obtaining different movies
 movies <- c("fight+club", "street+fighter", "mortal+kombat", "creed", "Karate+Kid")
@@ -461,5 +461,23 @@ final_df <- final_df |>
          median_income_moe = B19013_001M)
 
 final_df
+```
+
+```{r}
+final_df |>
+  ggplot(aes(x = factor(year), y = median_income)) +
+  geom_boxplot() + 
+  labs(
+    x = "Year",
+    y = "Median Income"
+  )
+
+final_df |>
+  ggplot(aes(x = factor(year), y = population)) +
+  geom_boxplot() + 
+  labs(
+    x = "Year",
+    y = "Population"
+  )
 ```
 
