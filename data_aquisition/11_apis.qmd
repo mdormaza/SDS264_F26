@@ -1,7 +1,6 @@
 ---
 title: "Data Acquisition with APIs in R"
-format:
-  html: default
+format: pdf
 editor_options: 
   chunk_output_type: console
 ---
@@ -69,7 +68,7 @@ You'll want to keep your API key handy for when you want to make requests for da
 You could then read in the key with code like this:
 
 ```{r}
-omdb_api_key <- readLines("data_aquisition/omdb_api")
+omdb_api_key <- readLines("../data_aquisition/omdb_api")
 ```
 
 While this works, the problem is once we start backing up our files to GitHub, your API key will also appear on GitHub, and your API key will no longer be secret.  To get around this, you can list `omdb_api_key.txt` in a `.gitignore` file, since GitHub does not back up files and folders listed in `.gitignore`.
@@ -119,7 +118,7 @@ We will first obtain data about the movie Coco from 2017.
 # Alternatively, load your OMDB API key using:
 # omdb_api_key <- Sys.getenv("OMDB_KEY")
 
-omdb_api_key <- readLines("scraping/omdb_api")
+omdb_api_key <- readLines("../data_aquisition/omdb_api")
 
 # Find url exploring examples at omdbapi.com
 url <- str_c(
@@ -141,7 +140,7 @@ details[[2]]                    # since a list, another way to access
 1. Build a data set for a collection of movies by completing the **FILL IN** sections in the code below:
 
 ```{r}
-omdb_api_key <- readLines("data_aquisition/omdb_api")
+omdb_api_key <- readLines("../data_aquisition/omdb_api")
 # Create a vector of 5 movie names you want to study
 #  - must figure out pattern in URL for obtaining different movies
 movies <- c("fight+club", "street+fighter", "mortal+kombat", "creed", "Karate+Kid")
@@ -193,11 +192,14 @@ Initial instructions:
 
 ```{r}
 # Load in your API key
-nps_api_key <- readLines("scraping/nps_api")
+nps_api_key <- readLines("../data_aquisition/nps_api")
 
 # Alternatively, load your NPS API key using:
 # nps_api_key <- Sys.getenv("NPS_KEY")
+```
 
+```{r}
+#| eval: FALSE
 # Read in park codes from Kaggle
 np_kaggle <- read_csv("Data/parks.csv")
 park_code <- np_kaggle$`Park Code` 
@@ -325,7 +327,7 @@ All right, let's try this!  Let's grab total population and median household inc
 #| message: FALSE
 
 # Load in your API key
-census_api_key <- readLines("scraping/census_api")
+census_api_key <- readLines("../data_aquisition/census_api")
 
 # Alternatively, load your NPS API key using:
 # census_api_key <- Sys.getenv("CENSUS_API_KEY")

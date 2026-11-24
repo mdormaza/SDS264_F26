@@ -1,7 +1,6 @@
 ---
 title: "Web Scraping in R"
-format:
-  html: default
+format: pdf
 editor_options: 
   chunk_output_type: console
 ---
@@ -124,6 +123,7 @@ Scroll through the page to verify that only the information you intend (the desc
 Now that we have identified CSS selectors for the information we need, let's fetch the data using the `rvest` package similarly to our approach in `09_table_scraping.qmd`.
 
 ```{r}
+#| eval: FALSE
 # check that scraping is allowed (Step 0)
 robotstxt::paths_allowed("https://www.nih.gov/news-events/news-releases")
 
@@ -134,6 +134,7 @@ nih <- read_html("https://www.nih.gov/news-events/news-releases")
 Finding the exact node (e.g. ".thumbnail-teaser__heading") is the tricky part.  Among all the html code used to produce a webpage, where do you go to grab the content of interest?  This is where SelectorGadget comes to the rescue!
 
 ```{r}
+#| eval: FALSE
 # Step 2: Extract specific nodes with html_nodes()
 title_temp <- html_nodes(nih, ".thumbnail-teaser__heading")
 title_temp
@@ -148,6 +149,7 @@ title_vec
 You can also write this all together with a pipe:
 
 ```{r}
+#| eval: FALSE
 robotstxt::paths_allowed("https://www.nih.gov/news-events/news-releases")
 
 read_html("https://www.nih.gov/news-events/news-releases") |>
@@ -158,6 +160,7 @@ read_html("https://www.nih.gov/news-events/news-releases") |>
 And finally we wrap the 4 steps above into the `bow` and `scrape` functions from the `polite` package:
 
 ```{r}
+#| eval: FALSE
 session <- bow(
   "https://www.nih.gov/news-events/news-releases", force = TRUE
 )
@@ -178,6 +181,7 @@ nih_title
 a) Repeat the process above to extract the description (which include the publication date and the abstract):
 
 ```{r}
+#| eval: FALSE
 session <- bow(
   "https://www.nih.gov/news-events/news-releases", force = TRUE
 )
@@ -299,6 +303,7 @@ scraped <- read_html_live("https://bestplaces.net/city/minnesota/minneapolis") |
   html_nodes(".mb-2 , .text-center div , .col-4 div , .mt-2 .ms-3") |>
   html_text()
 ```
+
 
 ```{r}
 scraped1 <- scraped[c(14, 10, 22, 4)]
